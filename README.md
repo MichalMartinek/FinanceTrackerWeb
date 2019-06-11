@@ -12,3 +12,8 @@ Téma mé semestrální práce je tvorba webového aplikace v jazyce Elm pro evi
 1) Na základě těchto dat se zobrazuje pro každou rozvahu statistika o zisku/ztrátě a základní grafy o pohybu.
 1) Každou položku lze kategorizovat, na základě toho lze sledovat tok peněz do jednotlivých kategorií v rámci statistik.
 1) Uživatel může do rozvahy pozvat další uživatele, kteří můžou rozvahu sledovat nebo dále editovat.
+
+## How to run
+
+- `npm start` to start a dev server running on `localhost:8080`
+- `npm run build` to build the production build into the `dist` folder
