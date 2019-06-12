@@ -1,10 +1,13 @@
-module Types exposing (..)
+module Types exposing (Model, Msg(..), Route(..))
 
+import Browser
 import Browser.Navigation as Nav
 import Home
+import Http
+import Profile
 import Login
 import Url
-import Browser
+
 
 type alias Model =
     { key : Nav.Key
@@ -12,12 +15,15 @@ type alias Model =
     , token : Maybe String
     , loginModel : Login.Model
     , homeModel : Home.Model
+    , profile : Profile.Model
     }
+
 
 type Route
     = Home
     | Login
     | NotFound
+
 
 type Msg
     = NoOp
@@ -27,3 +33,4 @@ type Msg
     | Logout
     | LoginMsg Login.Msg
     | HomeMsg Home.Msg
+    | ProfileMsg Profile.Msg

@@ -5,9 +5,11 @@ import Browser.Navigation as Nav
 import Common
 import Debug
 import Home
-import Html exposing (h1, text)
+import Html exposing (h1, div, text)
 import Login
 import Ports
+import Requests
+import Profile
 import Task
 import Types exposing (..)
 import Url
@@ -47,9 +49,29 @@ init token url key =
       , token = token
       , loginModel = Login.init
       , homeModel = Home.init
+      , profile = Profile.init
       }
     , redirectCmd
     )
+
+urlChaned : Route -> Model -> ( Model, Cmd Msg )
+urlChaned route model =
+    let 
+        newModel = {model | route = route}
+    in
+        case (route, model.token) of
+            (Home, Just t) ->
+                Profile.initLoading t newModel.profile |> updateWith (\subModel lModel -> {lModel | profile = subModel}) ProfileMsg newModel
+            (_, _) ->
+                (newModel, Cmd.none)
+
+
+updateWith : (subModel -> Model -> Model) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
+updateWith toModel toMsg model ( subModel, subCmd ) =
+    ( toModel (Debug.log "sub" subModel) model
+    , Cmd.map toMsg subCmd
+    )
+
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -64,9 +86,7 @@ update msg model =
                     ( model, Nav.load href )
 
         UrlChanged url ->
-            ( { model | route = toRoute url }
-            , Cmd.none
-            )
+            urlChaned (toRoute url) model
 
         LoginMsg loginMsg ->
             let
@@ -89,6 +109,9 @@ update msg model =
             ( { model | homeModel = Home.update homeMsg model.homeModel }
             , Cmd.none
             )
+
+        ProfileMsg profileMsg ->
+            Profile.update profileMsg model.profile |> updateWith (\subModel lModel -> {lModel | profile = subModel}) ProfileMsg model
 
         GotToken token ->
             ( { model | token = Just token }
@@ -123,8 +146,10 @@ view model =
                         |> Html.map LoginMsg
 
                 Home ->
-                    Home.view model.homeModel
-                        |> Html.map HomeMsg
+                    div [] [ Profile.view model.profile
+                    , Home.view model.homeModel |> Html.map HomeMsg
+                     ]
+                    
 
                 NotFound ->
                     h1 [] [ text "Not Found" ]
