@@ -30,6 +30,7 @@ type alias Model =
     , token : Maybe String
     , loginModel : Login.Model
     , homeModel : Home.Model
+    , commonModel : Common.Model
     }
 
 
@@ -57,6 +58,7 @@ type Msg
     | UrlChanged Url.Url
     | LinkClicked Browser.UrlRequest
     | GotToken String
+    | Logoutos
     | LoginMsg Login.Msg
     | HomeMsg Home.Msg
     | CommonMsg Common.Msg
@@ -84,6 +86,7 @@ init token url key =
       , token = token
       , loginModel = Login.init
       , homeModel = Home.init
+      , commonModel = Common.init token
       }
     , redirectCmd
     )
@@ -105,6 +108,21 @@ update msg model =
             , Cmd.none
             )
 
+        CommonMsg commonMsg ->
+            let
+                removeToken =
+                    Task.perform (always <| Logoutos) (Task.succeed ())
+
+                ( newCommonModel, cmd ) =
+                    Common.update
+                        { logoutCmd = removeToken
+                        }
+                        commonMsg
+                        model.commonModel
+            in
+            ( { model | commonModel = newCommonModel }
+            , Cmd.none
+            )
         LoginMsg loginMsg ->
             let
                 dispatchToken token =
@@ -134,6 +152,13 @@ update msg model =
                 , Ports.saveToken token
                 ]
             )
+        Logoutos ->
+            ( { model | token = Nothing }
+            , Cmd.batch
+                [ Ports.removeToken ()
+                , Nav.pushUrl model.key "/login"
+                ]
+            )
         _ ->
             (model, Cmd.none)
 
@@ -141,7 +166,7 @@ update msg model =
 view : Model -> Document Msg
 view model =
     let
-        navigation = Common.viewNavigation "test" |> Html.map CommonMsg
+        navigation = Common.viewNavigation "test" |> Html.map CommonMsg     
         content =
             case model.route of
                 Login ->
