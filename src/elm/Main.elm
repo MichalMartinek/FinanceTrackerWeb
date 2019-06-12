@@ -1,17 +1,17 @@
 module Main exposing (main)
 
-import Common
 import Browser exposing (Document)
 import Browser.Navigation as Nav
+import Common
+import Debug
 import Home
 import Html exposing (h1, text)
 import Login
 import Ports
 import Task
+import Types exposing (..)
 import Url
-import Debug
-import Url.Parser exposing (Parser, map, oneOf, parse, s, top)
-
+import Helpers exposing (..)
 
 main =
     Browser.application
@@ -23,45 +23,6 @@ main =
         , onUrlRequest = LinkClicked
         }
 
-
-type alias Model =
-    { key : Nav.Key
-    , route : Route
-    , token : Maybe String
-    , loginModel : Login.Model
-    , homeModel : Home.Model
-    , commonModel : Common.Model
-    }
-
-
-type Route
-    = Home
-    | Login
-    | NotFound
-
-
-route : Parser (Route -> a) a
-route =
-    oneOf
-        [ map Home top
-        , map Login (s "login")
-        ]
-
-
-toRoute : Url.Url -> Route
-toRoute url =
-    Maybe.withDefault NotFound (parse route url)
-
-
-type Msg
-    = NoOp
-    | UrlChanged Url.Url
-    | LinkClicked Browser.UrlRequest
-    | GotToken String
-    | Logoutos
-    | LoginMsg Login.Msg
-    | HomeMsg Home.Msg
-    | CommonMsg Common.Msg
 
 
 init : Maybe String -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -86,7 +47,6 @@ init token url key =
       , token = token
       , loginModel = Login.init
       , homeModel = Home.init
-      , commonModel = Common.init token
       }
     , redirectCmd
     )
@@ -108,21 +68,6 @@ update msg model =
             , Cmd.none
             )
 
-        CommonMsg commonMsg ->
-            let
-                removeToken =
-                    Task.perform (always <| Logoutos) (Task.succeed ())
-
-                ( newCommonModel, cmd ) =
-                    Common.update
-                        { logoutCmd = removeToken
-                        }
-                        commonMsg
-                        model.commonModel
-            in
-            ( { model | commonModel = newCommonModel }
-            , Cmd.none
-            )
         LoginMsg loginMsg ->
             let
                 dispatchToken token =
@@ -152,21 +97,25 @@ update msg model =
                 , Ports.saveToken token
                 ]
             )
-        Logoutos ->
+
+        Logout ->
             ( { model | token = Nothing }
             , Cmd.batch
                 [ Ports.removeToken ()
                 , Nav.pushUrl model.key "/login"
                 ]
             )
+
         _ ->
-            (model, Cmd.none)
+            ( model, Cmd.none )
 
 
 view : Model -> Document Msg
 view model =
     let
-        navigation = Common.viewNavigation "test" |> Html.map CommonMsg     
+        navigation =
+            Common.viewNavigation model.token Logout
+
         content =
             case model.route of
                 Login ->

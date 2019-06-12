@@ -1,50 +1,23 @@
-module Common exposing
-    ( init
-    , Model
-    , Msg(..)
-    , update
-    , viewNavigation
-    )
+module Common exposing (viewNavigation)
 
-import Html exposing (Html, div, text, button)
-import Html.Attributes exposing (class)
+import Html exposing (Html, a, button, div, text)
+import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
+import Types exposing (Msg)
 
 
-type Msg
-    = Logout
+viewNavigation : Maybe String -> Msg -> Html Msg
+viewNavigation token logoutCallback =
+    let
+        btn =
+            case token of
+                Nothing ->
+                    a [ href "/login" ] [ text "Login" ]
 
-
-type alias Model =
-    { token : Maybe String
-    }
-
-
-init : Maybe String -> Model
-init token =
-    { token = token
-    }
-
-update :
-    {logoutCmd : Cmd msg
-    }
-    -> Msg
-    -> Model
-    -> ( Model, Cmd msg )
-update { logoutCmd } msg model =
-    case msg of
-        Logout ->
-            ( { token = Maybe.Nothing }
-            , logoutCmd
-            )
-
-
-
-viewNavigation : String -> Html Msg
-viewNavigation username =
-    div [ class "page" ]
-        [ div [ class "page" ] [ text ("Test" ++ username) ], 
-            button [ onClick Logout ] [ text "Logout" ]
+                Just _ ->
+                    button [ onClick logoutCallback ] [ text "Logout" ]
+    in
+    div [ class "navigation" ]
+        [ div [ class "navigation__name" ] [ text "Finance Tracker" ]
+        , btn
         ]
-
-        
