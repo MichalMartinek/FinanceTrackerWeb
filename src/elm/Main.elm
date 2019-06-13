@@ -4,16 +4,17 @@ import Browser exposing (Document)
 import Browser.Navigation as Nav
 import Common
 import Debug
+import Helpers exposing (..)
 import Home
-import Html exposing (h1, div, text)
+import Html exposing (div, h1, text)
 import Login
 import Ports
-import Requests
 import Profile
+import Requests
 import Task
 import Types exposing (..)
 import Url
-import Helpers exposing (..)
+
 
 main =
     Browser.application
@@ -24,7 +25,6 @@ main =
         , onUrlChange = UrlChanged
         , onUrlRequest = LinkClicked
         }
-
 
 
 init : Maybe String -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -41,6 +41,9 @@ init token url key =
                 ( Login, Just _ ) ->
                     Nav.pushUrl key "/"
 
+                ( _, Just t ) ->
+                    Cmd.map ProfileMsg <| Profile.fetchProfile t
+
                 _ ->
                     Cmd.none
     in
@@ -54,16 +57,19 @@ init token url key =
     , redirectCmd
     )
 
+
 urlChaned : Route -> Model -> ( Model, Cmd Msg )
 urlChaned route model =
-    let 
-        newModel = {model | route = route}
+    let
+        newModel =
+            { model | route = route }
     in
-        case (route, model.token) of
-            (Home, Just t) ->
-                Profile.initLoading t newModel.profile |> updateWith (\subModel lModel -> {lModel | profile = subModel}) ProfileMsg newModel
-            (_, _) ->
-                (newModel, Cmd.none)
+    case ( route, model.token ) of
+        ( Home, Just t ) ->
+            Profile.initLoading t newModel.profile |> updateWith (\subModel lModel -> { lModel | profile = subModel }) ProfileMsg newModel
+
+        ( _, _ ) ->
+            ( newModel, Cmd.none )
 
 
 updateWith : (subModel -> Model -> Model) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
@@ -71,7 +77,6 @@ updateWith toModel toMsg model ( subModel, subCmd ) =
     ( toModel (Debug.log "sub" subModel) model
     , Cmd.map toMsg subCmd
     )
-
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -111,7 +116,7 @@ update msg model =
             )
 
         ProfileMsg profileMsg ->
-            Profile.update profileMsg model.profile |> updateWith (\subModel lModel -> {lModel | profile = subModel}) ProfileMsg model
+            Profile.update profileMsg model.profile |> updateWith (\subModel lModel -> { lModel | profile = subModel }) ProfileMsg model
 
         GotToken token ->
             ( { model | token = Just token }
@@ -146,10 +151,10 @@ view model =
                         |> Html.map LoginMsg
 
                 Home ->
-                    div [] [ Profile.view model.profile
-                    , Home.view model.homeModel |> Html.map HomeMsg
-                     ]
-                    
+                    div []
+                        [ Profile.view model.profile
+                        , Home.view model.homeModel |> Html.map HomeMsg
+                        ]
 
                 NotFound ->
                     h1 [] [ text "Not Found" ]
