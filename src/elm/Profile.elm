@@ -2,12 +2,124 @@ module Profile exposing (Model, Msg(..), ProfileData, fetchProfile, init, initLo
 
 import Api
 import Debug
-import Html exposing (div, h1, text, p)
+import Formatters
+import Html exposing (a, div, h1, h2, p, text)
+import Html.Attributes exposing (class, href)
 import Http
 import Json.Decode as D
 import Json.Decode.Extra as DecodeExtra
 import Time
-import Formatters
+
+
+
+-- Model
+
+
+type alias BudgetData =
+    { id : Int
+    , currency : String
+    , name : String
+    , date_created : Time.Posix
+    , date_updated : Time.Posix
+    }
+
+
+type Role
+    = Admin
+    | Viewer
+
+
+type alias BudgetWithRoleData =
+    { budget : BudgetData
+    , rel : Role
+    }
+
+
+type alias ProfileData =
+    { id : Int
+    , username : String
+    , budgets : List BudgetWithRoleData
+    }
+
+
+type alias Model =
+    { data : Api.DataWrapper ProfileData
+    }
+
+
+type Msg
+    = GotProfile (Result Http.Error ProfileData)
+
+
+initLoading :
+    String
+    -> Model
+    -> ( Model, Cmd Msg )
+initLoading token model =
+    ( { model | data = Api.Loading }, fetchProfile token )
+
+
+init : Model
+init =
+    { data = Api.Clear
+    }
+
+
+update :
+    Msg
+    -> Model
+    -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        GotProfile result ->
+            case Debug.log "profile" result of
+                Ok profile ->
+                    ( { model | data = Api.Success profile }, Cmd.none )
+
+                Err err ->
+                    ( { model | data = Api.Error err }, Cmd.none )
+
+
+
+-- JSON
+
+toRole : String -> Role
+toRole str = 
+    case str of
+        "ADMIN" ->
+            Admin
+    
+        _ ->
+            Viewer   
+
+budgetDecoder : D.Decoder BudgetData
+budgetDecoder =
+    D.map5 BudgetData
+        (D.field "id" D.int)
+        (D.field "currency" D.string)
+        (D.field "name" D.string)
+        (D.field "date_created" DecodeExtra.datetime)
+        (D.field "date_updated" DecodeExtra.datetime)
+
+
+budgetWithRoleDecoder : D.Decoder BudgetWithRoleData
+budgetWithRoleDecoder =
+    D.map2 BudgetWithRoleData
+        (D.field "budget" budgetDecoder)
+        (D.field "rel" <| D.map toRole D.string)
+
+
+profileDecoder : D.Decoder ProfileData
+profileDecoder =
+    D.map3 ProfileData
+        (D.field "id" D.int)
+        (D.field "username" D.string)
+        (D.field "budgets" (D.list budgetWithRoleDecoder))
+
+
+
+-- HTTP
+
 
 fetchProfile : String -> Cmd Msg
 fetchProfile token =
@@ -27,112 +139,30 @@ fetchProfile token =
         }
 
 
-type alias BudgetData =
-    { id : Int
-    , currency : String
-    , name : String
-    , date_created : Time.Posix
-    , date_updated : Time.Posix
-    }
 
-
-type alias BudgetWithRoleData =
-    { budget : BudgetData
-    }
-
-
-type alias ProfileData =
-    { id : Int
-    , username : String
-    , budgets : List BudgetWithRoleData
-    }
-
-
-type alias Model =
-    { status : Api.Status
-    , data : ProfileData
-    }
-
-
-type Msg
-    = GotProfile (Result Http.Error ProfileData)
-
-
-initLoading :
-    String
-    -> Model
-    -> ( Model, Cmd Msg )
-initLoading token model =
-    ( { model | status = Api.Loading }, fetchProfile token )
-
-
-init : Model
-init =
-    { status = Api.Loading
-    , data =
-        { id = 0
-        , username = ""
-        , budgets = []
-        }
-    }
-
-
-update :
-    Msg
-    -> Model
-    -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        GotProfile result ->
-            case Debug.log "profile" result of
-                Ok profile ->
-                    ( { model | data = profile, status = Api.Success }, Cmd.none )
-
-                Err err ->
-                    ( { model | status = Api.Error err }, Cmd.none )
-
-
-budgetDecoder : D.Decoder BudgetData
-budgetDecoder =
-    D.map5 BudgetData
-        (D.field "id" D.int)
-        (D.field "currency" D.string)
-        (D.field "name" D.string)
-        (D.field "date_created" DecodeExtra.datetime)
-        (D.field "date_updated" DecodeExtra.datetime)
-
-
-budgetWithRoleDecoder : D.Decoder BudgetWithRoleData
-budgetWithRoleDecoder =
-    D.map BudgetWithRoleData
-        (D.field "budget" budgetDecoder)
-
-
-profileDecoder : D.Decoder ProfileData
-profileDecoder =
-    D.map3 ProfileData
-        (D.field "id" D.int)
-        (D.field "username" D.string)
-        (D.field "budgets" (D.list budgetWithRoleDecoder))
+-- Views
 
 
 viewBudgetsListItem : BudgetWithRoleData -> Html.Html msg
 viewBudgetsListItem budget =
-    div [] [
-        h1 [] [ text budget.budget.name ]
-        ,p [] [ text <| Formatters.toUtcString budget.budget.date_created ]
-    ]
+    div []
+        [ h1 [] [ text budget.budget.name ]
+        , p [] [ text <| Formatters.toUtcString budget.budget.date_created ]
+        ]
 
 
-viewBudgetsList : Model -> Html.Html msg
-viewBudgetsList { data } =
+viewBudgetsList : List BudgetWithRoleData -> Html.Html msg
+viewBudgetsList budgets =
     div [] <|
-        List.map viewBudgetsListItem data.budgets
+        List.map viewBudgetsListItem budgets
 
 
 view : Model -> Html.Html msg
-view model =
-    div []
-        [ div [] [ text ("Username : " ++ (Debug.log "asd" model).data.username) ]
-        , viewBudgetsList model
-        ]
+view { data } =
+    div [] <|
+        Api.defaultDataWrapperView data <|
+            \profile ->
+                [ h2 [] [ text ("Username : " ++ (Debug.log "Profile" profile).username) ]
+                , a [ href "/" ] [ text "Test" ]
+                , viewBudgetsList profile.budgets
+                ]

@@ -3,10 +3,9 @@ module Common exposing (viewNavigation)
 import Html exposing (Html, a, button, div, text)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
-import Types exposing (Msg)
 
 
-viewNavigation : Maybe String -> Msg -> Html Msg
+viewNavigation : Maybe String -> msg -> Html msg
 viewNavigation token logoutCallback =
     let
         btn =
