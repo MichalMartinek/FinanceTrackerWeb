@@ -26,6 +26,7 @@ type alias Model =
 type Route
     = Home
     | BudgetDetail Int
+    | EditBudget Int
     | NewBudget
     | Login
     | NotFound

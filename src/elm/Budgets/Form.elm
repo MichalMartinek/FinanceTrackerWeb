@@ -26,6 +26,7 @@ type alias Model =
 
 type Msg
     = ClearForm
+    | InitForm Budget.Budget
     | NameChanged String
     | CurrencyChanged String
     | FormTypeChanged FormType
@@ -55,6 +56,15 @@ update { token, tagger, reloadProfile, navKey } msg model =
     case msg of
         ClearForm ->
             ( init, Cmd.none )
+
+        InitForm budget ->
+            ( { name = budget.name
+              , currency = budget.currency
+              , formType = EditBudget budget.id
+              , send = Api.Clear
+              }
+            , Nav.pushUrl navKey ("/budget-edit/" ++ String.fromInt budget.id)
+            )
 
         NameChanged s ->
             ( { model | name = s }, Cmd.none )
@@ -93,16 +103,27 @@ encodeForm m =
 
 viewForm : Model -> Html Msg
 viewForm model =
-    form [ onSubmit Submit ]
-        [ div []
-            [ label [] [ text "Budget Name" ]
-            , input [ type_ "text", value model.name, onInput (\a -> NameChanged a) ] []
+    let 
+        title = case model.formType of
+                NewBudget ->
+                    "Add new"
+
+                EditBudget _ ->
+                    "Edit"
+    in
+    div []
+        [ h1 [] [text title]
+        , form [ onSubmit Submit ]
+            [ div []
+                [ label [] [ text "Budget Name" ]
+                , input [ type_ "text", value model.name, onInput (\a -> NameChanged a) ] []
+                ]
+            , div []
+                [ label [] [ text "Budget Currency" ]
+                , input [ type_ "text", value model.currency, onInput (\a -> CurrencyChanged a) ] []
+                ]
+            , button [ type_ "submit" ] [ text "Save" ]
             ]
-        , div []
-            [ label [] [ text "Budget Currency" ]
-            , input [ type_ "text", value model.currency, onInput (\a -> CurrencyChanged a) ] []
-            ]
-        , button [ type_ "submit" ] [ text "Save" ]
         ]
 
 
@@ -112,11 +133,27 @@ sendBudget token model msg =
         headers =
             [ Http.header "Authorization" ("token " ++ token)
             ]
+
+        method =
+            case model.formType of
+                NewBudget ->
+                    "POST"
+
+                EditBudget _ ->
+                    "PUT"
+
+        url =
+            case model.formType of
+                NewBudget ->
+                    "/budgets/"
+
+                EditBudget id ->
+                    "/budgets/" ++ (String.fromInt id) ++ "/"
     in
     Http.request
-        { method = "POST"
+        { method = method
         , headers = headers
-        , url = Api.apiUrl ++ "/budgets/"
+        , url = Api.apiUrl ++ url
         , body = Http.jsonBody <| encodeForm model
         , expect = Http.expectJson msg Budget.budgetDecoder
         , timeout = Nothing

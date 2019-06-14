@@ -8,8 +8,9 @@ route =
     oneOf
         [ map Home top
         , map Login (s "login")
-        , map BudgetDetail (s "budget" </> int)
         , map NewBudget (s "new-budget")
+        , map BudgetDetail (s "budget" </> int)
+        , map EditBudget (s "budget-edit" </> int)
         ]
 
 

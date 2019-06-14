@@ -3,14 +3,14 @@ module Budget exposing (Model, Msg(..), Budget, fetchBudget, budgetDecoder, init
 import Api
 import Debug
 import Formatters
-import Html exposing (a, div, h1, h2, p, text)
+import Html exposing (a, div, h1, h2, p, button, text)
 import Html.Attributes exposing (class, href)
+import Html.Events exposing (onClick)
 import Http
 import Json.Decode as D
 import Json.Decode.Extra as DecodeExtra
 import Time
 import Profile exposing (Role)
-
 
 -- Model
 type alias Category =
@@ -50,7 +50,7 @@ initLoading :
     -> Model
     -> ( Model, Cmd Msg )
 initLoading token id model =
-    ( { model | data = Api.Loading }, fetchBudget token id )
+    ( { model | data = Api.Loading }, fetchBudget token id GotBudget)
 
 
 init : Model
@@ -106,8 +106,8 @@ categoryDecoder =
 -- HTTP
 
 
-fetchBudget : String -> Int -> Cmd Msg
-fetchBudget token id =
+fetchBudget : String -> Int -> (Result Http.Error Budget -> msg) -> Cmd msg
+fetchBudget token id msg =
     let
         headers =
             [ Http.header "Authorization" ("token " ++ token)
@@ -118,7 +118,7 @@ fetchBudget token id =
         , headers = headers
         , url = Api.apiUrl ++ "/budgets/" ++ ( String.fromInt id) ++ "/"
         , body = Http.emptyBody
-        , expect = Http.expectJson GotBudget budgetDecoder
+        , expect = Http.expectJson msg budgetDecoder
         , timeout = Nothing
         , tracker = Nothing
         }
@@ -141,12 +141,12 @@ viewBudgetsLines budgets =
         List.map viewBudgetsListItem budgets
 
 
-view : Model -> Html.Html msg
-view { data } =
+view : Model -> ( Budget -> msg) -> Html.Html msg
+view { data } msg =
     div [] <|
         Api.defaultDataWrapperView data <|
             \budget ->
                 [ h2 [] [ text (Debug.log "Profile" budget).name ]
-                , a [ href "/" ] [ text "Test" ]
+                , button [ class "edit-button", onClick (msg budget) ] [ text "Editovat" ]
                 , viewBudgetsLines budget.lines
                 ]

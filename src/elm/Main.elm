@@ -2,10 +2,10 @@ module Main exposing (main)
 
 import Browser exposing (Document)
 import Browser.Navigation as Nav
+import Budget
 import Budgets.Form as BudgetForm
 import Common
 import Debug
-import Router exposing (..)
 import Home
 import Html exposing (div, h1, text)
 import Html.Attributes exposing (class)
@@ -13,10 +13,10 @@ import Login
 import Ports
 import Profile
 import Requests
+import Router exposing (..)
 import Task
 import Types exposing (..)
 import Url
-import Budget
 
 
 main =
@@ -35,7 +35,10 @@ init token url key =
     let
         initialRoute =
             Debug.log "value" (toRoute url)
-        loadProfileCmd t = Cmd.map ProfileMsg <| Profile.fetchProfile t
+
+        loadProfileCmd t =
+            Cmd.map ProfileMsg <| Profile.fetchProfile t
+
         redirectCmd =
             case ( initialRoute, token ) of
                 ( Home, Nothing ) ->
@@ -45,7 +48,22 @@ init token url key =
                     Nav.pushUrl key "/"
 
                 ( BudgetDetail id, Just t ) ->
-                    Cmd.batch [loadProfileCmd t, Cmd.map BudgetMsg <| Budget.fetchBudget t id]
+                    Cmd.batch [ loadProfileCmd t, Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget ]
+
+                ( EditBudget id, Just t ) ->
+                    Cmd.batch
+                        [ loadProfileCmd t
+                        , Budget.fetchBudget t
+                            id
+                            (\budget ->
+                                case budget of
+                                    Ok b ->
+                                        (BudgetFormMsg << BudgetForm.InitForm) b
+
+                                    _ ->
+                                        NoOp
+                            )
+                        ]
 
                 ( _, Just t ) ->
                     loadProfileCmd t
@@ -93,10 +111,12 @@ updateWith toModel toMsg model ( subModel, subCmd ) =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        modelToken = Maybe.withDefault "" model.token
-        reloadProfileCmd t = Cmd.map ProfileMsg <| Profile.fetchProfile t
+        modelToken =
+            Maybe.withDefault "" model.token
+
+        reloadProfileCmd t =
+            Cmd.map ProfileMsg <| Profile.fetchProfile t
     in
-    
     case msg of
         LinkClicked urlRequest ->
             case urlRequest of
@@ -139,11 +159,13 @@ update msg model =
 
         BudgetFormMsg budgetFormMsg ->
             let
-                args = { token = modelToken
+                args =
+                    { token = modelToken
                     , tagger = BudgetFormMsg
                     , reloadProfile = reloadProfileCmd
                     , navKey = model.key
                     }
+
                 ( newLoginModel, cmd ) =
                     BudgetForm.update
                         args
@@ -153,7 +175,7 @@ update msg model =
             ( { model | budgetForm = newLoginModel }
             , cmd
             )
-            
+
         GotToken token ->
             ( { model | token = Just token }
             , Cmd.batch
@@ -179,8 +201,10 @@ view model =
     let
         navigation =
             Common.viewNavigation model.token Logout
-        budgetsSidePanel = 
+
+        budgetsSidePanel =
             Common.viewSidePanel model.profile
+
         content =
             case model.route of
                 Login ->
@@ -188,20 +212,29 @@ view model =
                         |> Html.map LoginMsg
 
                 Home ->
-                    div [ class "main-layout"]
+                    div [ class "main-layout" ]
                         [ budgetsSidePanel
                         , Home.view model.homeModel |> Html.map HomeMsg
                         ]
+
                 BudgetDetail id ->
-                    div [ class "main-layout"]
+                    div [ class "main-layout" ]
                         [ budgetsSidePanel
-                        , Budget.view model.budgetModel |> Html.map BudgetMsg
+                        , Budget.view model.budgetModel (BudgetFormMsg << BudgetForm.InitForm)
                         ]
+
                 NewBudget ->
-                    div [ class "main-layout"]
+                    div [ class "main-layout" ]
                         [ budgetsSidePanel
                         , BudgetForm.viewForm model.budgetForm |> Html.map BudgetFormMsg
                         ]
+
+                EditBudget _ ->
+                    div [ class "main-layout" ]
+                        [ budgetsSidePanel
+                        , BudgetForm.viewForm model.budgetForm |> Html.map BudgetFormMsg
+                        ]
+
                 _ ->
                     h1 [] [ text "Not Found" ]
     in
