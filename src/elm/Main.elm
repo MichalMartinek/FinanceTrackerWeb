@@ -92,19 +92,26 @@ urlChaned route model =
     in
     case ( route, model.token ) of
         ( Home, Just t ) ->
-            Profile.initLoading t newModel.profile |> updateWith (\subModel lModel -> { lModel | profile = subModel }) ProfileMsg newModel
+            Profile.initLoading t newModel.profile |> updateWithCmd (\subModel lModel -> { lModel | profile = subModel }) ProfileMsg newModel
 
         ( BudgetDetail id, Just t ) ->
-            Budget.initLoading t id newModel.budgetModel |> updateWith (\subModel lModel -> { lModel | budgetModel = subModel }) BudgetMsg newModel
+            Budget.initLoading t id newModel.budgetModel |> updateWithCmd (\subModel lModel -> { lModel | budgetModel = subModel }) BudgetMsg newModel
 
         ( _, _ ) ->
             ( newModel, Cmd.none )
 
 
-updateWith : (subModel -> Model -> Model) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
-updateWith toModel toMsg model ( subModel, subCmd ) =
+updateWithCmd : (subModel -> Model -> Model) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
+updateWithCmd toModel toMsg model ( subModel, subCmd ) =
     ( toModel (Debug.log "sub" subModel) model
     , Cmd.map toMsg subCmd
+    )
+
+
+updateWith : (subModel -> Model -> Model) -> Model -> ( subModel, Cmd Msg ) -> ( Model, Cmd Msg )
+updateWith toModel model ( subModel, subCmd ) =
+    ( toModel (Debug.log "sub" subModel) model
+    , subCmd
     )
 
 
@@ -152,10 +159,17 @@ update msg model =
             )
 
         ProfileMsg profileMsg ->
-            Profile.update profileMsg model.profile |> updateWith (\subModel lModel -> { lModel | profile = subModel }) ProfileMsg model
+            Profile.update profileMsg model.profile |> updateWithCmd (\subModel lModel -> { lModel | profile = subModel }) ProfileMsg model
 
         BudgetMsg budgetMsg ->
-            Budget.update budgetMsg model.budgetModel |> updateWith (\subModel lModel -> { lModel | budgetModel = subModel }) BudgetMsg model
+            let
+                args =
+                    { token = modelToken
+                    , tagger = BudgetMsg
+                    , navKey = model.key
+                    }
+            in
+            Budget.update args budgetMsg model.budgetModel |> updateWith (\subModel lModel -> { lModel | budgetModel = subModel }) model
 
         BudgetFormMsg budgetFormMsg ->
             let
@@ -220,7 +234,7 @@ view model =
                 BudgetDetail id ->
                     div [ class "main-layout" ]
                         [ budgetsSidePanel
-                        , Budget.view model.budgetModel (BudgetFormMsg << BudgetForm.InitForm)
+                        , Budget.view model.budgetModel (BudgetFormMsg << BudgetForm.InitForm) (BudgetMsg << Budget.DeleteBudget)
                         ]
 
                 NewBudget ->

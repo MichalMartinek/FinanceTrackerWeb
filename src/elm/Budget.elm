@@ -1,22 +1,27 @@
-module Budget exposing (Model, Msg(..), Budget, fetchBudget, budgetDecoder, init, initLoading, update, view)
+module Budget exposing (Budget, Model, Msg(..), budgetDecoder, fetchBudget, init, initLoading, update, view)
 
 import Api
+import Browser.Navigation as Nav
 import Debug
 import Formatters
-import Html exposing (a, div, h1, h2, p, button, text)
+import Html exposing (a, button, div, h1, h2, p, text)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
 import Http
 import Json.Decode as D
 import Json.Decode.Extra as DecodeExtra
-import Time
 import Profile exposing (Role)
+import Time
+
+
 
 -- Model
+
+
 type alias Category =
-    {
-        code : String
+    { code : String
     }
+
 
 type alias BudgetLine =
     { id : Int
@@ -24,6 +29,7 @@ type alias BudgetLine =
     , amount : Float
     , category : Category
     }
+
 
 type alias Budget =
     { id : Int
@@ -37,11 +43,14 @@ type alias Budget =
 
 type alias Model =
     { data : Api.DataWrapper Budget
+    , delete : Api.DataWrapper Bool
     }
 
 
 type Msg
     = GotBudget (Result Http.Error Budget)
+    | DeleteBudget Int
+    | DeletedBudget (Result Http.Error ())
 
 
 initLoading :
@@ -50,20 +59,25 @@ initLoading :
     -> Model
     -> ( Model, Cmd Msg )
 initLoading token id model =
-    ( { model | data = Api.Loading }, fetchBudget token id GotBudget)
+    ( { model | data = Api.Loading }, fetchBudget token id GotBudget )
 
 
 init : Model
 init =
     { data = Api.Clear
+    , delete = Api.Clear
     }
 
 
 update :
-    Msg
+    { token : String
+    , tagger : Msg -> msg
+    , navKey : Nav.Key
+    }
+    -> Msg
     -> Model
-    -> ( Model, Cmd Msg )
-update msg model =
+    -> ( Model, Cmd msg )
+update { token, tagger, navKey } msg model =
     case msg of
         GotBudget result ->
             case Debug.log "budget" result of
@@ -73,9 +87,22 @@ update msg model =
                 Err err ->
                     ( { model | data = Api.Error err }, Cmd.none )
 
+        DeleteBudget id ->
+            ( { model | delete = Api.Loading }, deleteBudget token id (tagger << DeletedBudget) )
+
+        DeletedBudget result ->
+            case result of
+                Ok _ ->
+                    ( { model | delete = Api.Success True }, Nav.pushUrl navKey "/" )
+
+                Err err ->
+                    ( { model | delete = Api.Error err }, Cmd.none )
+
 
 
 -- JSON
+
+
 budgetDecoder : D.Decoder Budget
 budgetDecoder =
     D.map6 Budget
@@ -116,7 +143,7 @@ fetchBudget token id msg =
     Http.request
         { method = "GET"
         , headers = headers
-        , url = Api.apiUrl ++ "/budgets/" ++ ( String.fromInt id) ++ "/"
+        , url = Api.apiUrl ++ "/budgets/" ++ String.fromInt id ++ "/"
         , body = Http.emptyBody
         , expect = Http.expectJson msg budgetDecoder
         , timeout = Nothing
@@ -124,8 +151,27 @@ fetchBudget token id msg =
         }
 
 
+deleteBudget : String -> Int -> (Result Http.Error () -> msg) -> Cmd msg
+deleteBudget token id msg =
+    let
+        headers =
+            [ Http.header "Authorization" ("token " ++ token)
+            ]
+    in
+    Http.request
+        { method = "DELETE"
+        , headers = headers
+        , url = Api.apiUrl ++ "/budgets/" ++ String.fromInt id ++ "/"
+        , body = Http.emptyBody
+        , expect = Http.expectWhatever msg
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
 
 -- Views
+
 
 viewBudgetsListItem : BudgetLine -> Html.Html msg
 viewBudgetsListItem budget =
@@ -141,12 +187,13 @@ viewBudgetsLines budgets =
         List.map viewBudgetsListItem budgets
 
 
-view : Model -> ( Budget -> msg) -> Html.Html msg
-view { data } msg =
+view : Model -> (Budget -> msg) -> (Int -> msg) -> Html.Html msg
+view { data } editMsg deleteMsg =
     div [] <|
         Api.defaultDataWrapperView data <|
             \budget ->
                 [ h2 [] [ text (Debug.log "Profile" budget).name ]
-                , button [ class "edit-button", onClick (msg budget) ] [ text "Editovat" ]
+                , button [ class "edit-button", onClick (editMsg budget) ] [ text "Editovat" ]
+                , button [ class "delete-button", onClick (deleteMsg budget.id) ] [ text "Smazat" ]
                 , viewBudgetsLines budget.lines
                 ]
