@@ -31,7 +31,7 @@ viewSidePanel { data } =
         Api.defaultDataWrapperView data <|
             \profile ->
                 [ h2 [] [ text "Budgets" ]
-                , a [ href "/budgets-new" ] [ text "Create new" ]
+                , a [ href "/new-budget" ] [ text "Create new" ]
                 , ul [ class "budgets-list" ] <| List.map viewBudgetsListItem profile.budgets
                 ]
 

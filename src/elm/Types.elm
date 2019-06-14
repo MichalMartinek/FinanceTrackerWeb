@@ -3,6 +3,7 @@ module Types exposing (Model, Msg(..), Route(..))
 import Browser
 import Browser.Navigation as Nav
 import Budget
+import Budgets.Form as BudgetForm
 import Home
 import Http
 import Login
@@ -17,6 +18,7 @@ type alias Model =
     , loginModel : Login.Model
     , homeModel : Home.Model
     , budgetModel : Budget.Model
+    , budgetForm : BudgetForm.Model
     , profile : Profile.Model
     }
 
@@ -24,6 +26,7 @@ type alias Model =
 type Route
     = Home
     | BudgetDetail Int
+    | NewBudget
     | Login
     | NotFound
 
@@ -37,4 +40,5 @@ type Msg
     | LoginMsg Login.Msg
     | HomeMsg Home.Msg
     | BudgetMsg Budget.Msg
+    | BudgetFormMsg BudgetForm.Msg
     | ProfileMsg Profile.Msg

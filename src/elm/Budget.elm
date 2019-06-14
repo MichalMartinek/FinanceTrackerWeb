@@ -1,4 +1,4 @@
-module Budget exposing (Model, Msg(..), fetchBudget, init, initLoading, update, view)
+module Budget exposing (Model, Msg(..), Budget, fetchBudget, budgetDecoder, init, initLoading, update, view)
 
 import Api
 import Debug

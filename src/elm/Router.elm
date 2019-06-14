@@ -1,4 +1,4 @@
-module Helpers exposing (..)
+module Router exposing (..)
 import Url
 import Types exposing (..)
 import Url.Parser exposing (..)
@@ -9,6 +9,7 @@ route =
         [ map Home top
         , map Login (s "login")
         , map BudgetDetail (s "budget" </> int)
+        , map NewBudget (s "new-budget")
         ]
 
 

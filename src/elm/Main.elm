@@ -2,9 +2,10 @@ module Main exposing (main)
 
 import Browser exposing (Document)
 import Browser.Navigation as Nav
+import Budgets.Form as BudgetForm
 import Common
 import Debug
-import Helpers exposing (..)
+import Router exposing (..)
 import Home
 import Html exposing (div, h1, text)
 import Html.Attributes exposing (class)
@@ -57,6 +58,7 @@ init token url key =
       , token = token
       , loginModel = Login.init
       , homeModel = Home.init
+      , budgetForm = BudgetForm.init
       , budgetModel = Budget.init
       , profile = Profile.init
       }
@@ -90,6 +92,10 @@ updateWith toModel toMsg model ( subModel, subCmd ) =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        modelToken = Maybe.withDefault "" model.token
+    in
+    
     case msg of
         LinkClicked urlRequest ->
             case urlRequest of
@@ -129,6 +135,9 @@ update msg model =
 
         BudgetMsg budgetMsg ->
             Budget.update budgetMsg model.budgetModel |> updateWith (\subModel lModel -> { lModel | budgetModel = subModel }) BudgetMsg model
+
+        BudgetFormMsg budgetFormMsg ->
+            BudgetForm.update modelToken budgetFormMsg model.budgetForm |> updateWith (\subModel lModel -> { lModel | budgetForm = subModel }) BudgetFormMsg model
 
         GotToken token ->
             ( { model | token = Just token }
@@ -172,6 +181,11 @@ view model =
                     div [ class "main-layout"]
                         [ budgetsSidePanel
                         , Budget.view model.budgetModel |> Html.map BudgetMsg
+                        ]
+                NewBudget ->
+                    div [ class "main-layout"]
+                        [ budgetsSidePanel
+                        , BudgetForm.viewForm model.budgetForm |> Html.map BudgetFormMsg
                         ]
                 _ ->
                     h1 [] [ text "Not Found" ]
