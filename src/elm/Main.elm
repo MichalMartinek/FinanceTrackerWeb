@@ -143,7 +143,8 @@ view model =
     let
         navigation =
             Common.viewNavigation model.token Logout
-
+        budgetsSidePanel = 
+            Common.viewSidePanel model.profile
         content =
             case model.route of
                 Login ->
@@ -152,7 +153,7 @@ view model =
 
                 Home ->
                     div []
-                        [ Profile.view model.profile
+                        [ budgetsSidePanel
                         , Home.view model.homeModel |> Html.map HomeMsg
                         ]
 

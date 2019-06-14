@@ -1,4 +1,4 @@
-module Profile exposing (Model, Msg(..), ProfileData, fetchProfile, init, initLoading, update, view)
+module Profile exposing (Model, Msg(..), ProfileData, BudgetWithRoleData, fetchProfile, init, initLoading, update, view)
 
 import Api
 import Debug
