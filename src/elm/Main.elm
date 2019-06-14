@@ -94,6 +94,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
         modelToken = Maybe.withDefault "" model.token
+        reloadProfileCmd t = Cmd.map ProfileMsg <| Profile.fetchProfile t
     in
     
     case msg of
@@ -137,8 +138,22 @@ update msg model =
             Budget.update budgetMsg model.budgetModel |> updateWith (\subModel lModel -> { lModel | budgetModel = subModel }) BudgetMsg model
 
         BudgetFormMsg budgetFormMsg ->
-            BudgetForm.update modelToken budgetFormMsg model.budgetForm |> updateWith (\subModel lModel -> { lModel | budgetForm = subModel }) BudgetFormMsg model
-
+            let
+                args = { token = modelToken
+                    , tagger = BudgetFormMsg
+                    , reloadProfile = reloadProfileCmd
+                    , navKey = model.key
+                    }
+                ( newLoginModel, cmd ) =
+                    BudgetForm.update
+                        args
+                        budgetFormMsg
+                        model.budgetForm
+            in
+            ( { model | budgetForm = newLoginModel }
+            , cmd
+            )
+            
         GotToken token ->
             ( { model | token = Just token }
             , Cmd.batch

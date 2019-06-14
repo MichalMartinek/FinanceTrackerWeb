@@ -1,13 +1,15 @@
-module Budgets.Form exposing (..)
+module Budgets.Form exposing (FormType(..), Model, Msg(..), encodeForm, init, sendBudget, update, viewForm)
 
 import Api
-import Json.Encode as E
-import Html exposing (Html, a, button, div, h1, h2, input, label, form, span, text, textarea)
+import Browser.Navigation as Nav
+import Budget
+import Debug
+import Html exposing (Html, a, button, div, form, h1, h2, input, label, span, text, textarea)
 import Html.Attributes exposing (disabled, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
-import Debug
 import Http
-import Budget
+import Json.Encode as E
+
 
 type FormType
     = NewBudget
@@ -33,24 +35,27 @@ type Msg
 
 init : Model
 init =
-    {
-        name = ""
-        , currency = ""
-        , formType = NewBudget
-        , send = Api.Clear
+    { name = ""
+    , currency = ""
+    , formType = NewBudget
+    , send = Api.Clear
     }
 
 
 update :
-    String
+    { token : String
+    , tagger : Msg -> msg
+    , reloadProfile : String -> Cmd msg
+    , navKey : Nav.Key
+    }
     -> Msg
     -> Model
-    -> ( Model, Cmd Msg )
-update token msg model =
+    -> ( Model, Cmd msg )
+update { token, tagger, reloadProfile, navKey } msg model =
     case msg of
         ClearForm ->
             ( init, Cmd.none )
-            
+
         NameChanged s ->
             ( { model | name = s }, Cmd.none )
 
@@ -60,24 +65,22 @@ update token msg model =
         FormTypeChanged s ->
             ( { model | formType = s }, Cmd.none )
 
-
         Submit ->
             if String.isEmpty model.name || String.isEmpty model.currency then
                 ( model, Cmd.none )
 
             else
-                ( { model | send = Api.Loading}
-                , sendBudget token model
+                ( { model | send = Api.Loading }
+                , sendBudget token model (tagger << GotBudget)
                 )
 
         GotBudget result ->
             case Debug.log "budget-posted" result of
                 Ok d ->
-                    ( { init | send = Api.Success d }, Cmd.none )
+                    ( { init | send = Api.Success d }, Cmd.batch [ reloadProfile token, Nav.pushUrl navKey ("/budget/" ++ String.fromInt d.id) ] )
 
                 Err err ->
                     ( { model | send = Api.Error err }, Cmd.none )
-
 
 
 encodeForm : Model -> E.Value
@@ -88,10 +91,9 @@ encodeForm m =
         ]
 
 
-
 viewForm : Model -> Html Msg
 viewForm model =
-        form [onSubmit Submit]
+    form [ onSubmit Submit ]
         [ div []
             [ label [] [ text "Budget Name" ]
             , input [ type_ "text", value model.name, onInput (\a -> NameChanged a) ] []
@@ -104,8 +106,8 @@ viewForm model =
         ]
 
 
-sendBudget : String -> Model -> Cmd Msg
-sendBudget token model =
+sendBudget : String -> Model -> (Result Http.Error Budget.Budget -> msg) -> Cmd msg
+sendBudget token model msg =
     let
         headers =
             [ Http.header "Authorization" ("token " ++ token)
@@ -116,8 +118,7 @@ sendBudget token model =
         , headers = headers
         , url = Api.apiUrl ++ "/budgets/"
         , body = Http.jsonBody <| encodeForm model
-        , expect = Http.expectJson GotBudget Budget.budgetDecoder
+        , expect = Http.expectJson msg Budget.budgetDecoder
         , timeout = Nothing
         , tracker = Nothing
         }
-
