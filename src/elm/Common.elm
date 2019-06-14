@@ -40,7 +40,7 @@ viewBudgetsListItem : Profile.BudgetWithRoleData -> Html msg
 viewBudgetsListItem budget =
     li
         [ class "budgets-item" ]
-        [ a [ href <| "/budgets/" ++ String.fromInt budget.budget.id ]
+        [ a [ href <| "/budget/" ++ String.fromInt budget.budget.id ]
             [ span [class "budgets-item__title"] [ text budget.budget.name ]
             , p [] [ text <| Formatters.toUtcString budget.budget.date_created ]
             ]

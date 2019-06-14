@@ -1,13 +1,14 @@
 module Helpers exposing (..)
 import Url
 import Types exposing (..)
-import Url.Parser exposing (Parser, map, oneOf, parse, s, top)
+import Url.Parser exposing (..)
 
 route : Parser (Route -> a) a
 route =
     oneOf
         [ map Home top
         , map Login (s "login")
+        , map BudgetDetail (s "budget" </> int)
         ]
 
 

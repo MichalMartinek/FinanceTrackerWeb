@@ -1,4 +1,4 @@
-module Profile exposing (Model, Msg(..), ProfileData, BudgetWithRoleData, fetchProfile, init, initLoading, update, view)
+module Profile exposing (Model, Msg(..), ProfileData, Role, BudgetWithRoleData, fetchProfile, init, initLoading, update, view)
 
 import Api
 import Debug
@@ -141,7 +141,7 @@ fetchProfile token =
 
 
 -- Views
-
+-- TODO: Clean up
 
 viewBudgetsListItem : BudgetWithRoleData -> Html.Html msg
 viewBudgetsListItem budget =

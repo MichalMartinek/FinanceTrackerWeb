@@ -7,6 +7,7 @@ import Debug
 import Helpers exposing (..)
 import Home
 import Html exposing (div, h1, text)
+import Html.Attributes exposing (class)
 import Login
 import Ports
 import Profile
@@ -14,6 +15,7 @@ import Requests
 import Task
 import Types exposing (..)
 import Url
+import Budget
 
 
 main =
@@ -32,7 +34,7 @@ init token url key =
     let
         initialRoute =
             Debug.log "value" (toRoute url)
-
+        loadProfileCmd t = Cmd.map ProfileMsg <| Profile.fetchProfile t
         redirectCmd =
             case ( initialRoute, token ) of
                 ( Home, Nothing ) ->
@@ -41,8 +43,11 @@ init token url key =
                 ( Login, Just _ ) ->
                     Nav.pushUrl key "/"
 
+                ( BudgetDetail id, Just t ) ->
+                    Cmd.batch [loadProfileCmd t, Cmd.map BudgetMsg <| Budget.fetchBudget t id]
+
                 ( _, Just t ) ->
-                    Cmd.map ProfileMsg <| Profile.fetchProfile t
+                    loadProfileCmd t
 
                 _ ->
                     Cmd.none
@@ -52,6 +57,7 @@ init token url key =
       , token = token
       , loginModel = Login.init
       , homeModel = Home.init
+      , budgetModel = Budget.init
       , profile = Profile.init
       }
     , redirectCmd
@@ -67,6 +73,9 @@ urlChaned route model =
     case ( route, model.token ) of
         ( Home, Just t ) ->
             Profile.initLoading t newModel.profile |> updateWith (\subModel lModel -> { lModel | profile = subModel }) ProfileMsg newModel
+
+        ( BudgetDetail id, Just t ) ->
+            Budget.initLoading t id newModel.budgetModel |> updateWith (\subModel lModel -> { lModel | budgetModel = subModel }) BudgetMsg newModel
 
         ( _, _ ) ->
             ( newModel, Cmd.none )
@@ -118,6 +127,9 @@ update msg model =
         ProfileMsg profileMsg ->
             Profile.update profileMsg model.profile |> updateWith (\subModel lModel -> { lModel | profile = subModel }) ProfileMsg model
 
+        BudgetMsg budgetMsg ->
+            Budget.update budgetMsg model.budgetModel |> updateWith (\subModel lModel -> { lModel | budgetModel = subModel }) BudgetMsg model
+
         GotToken token ->
             ( { model | token = Just token }
             , Cmd.batch
@@ -152,12 +164,16 @@ view model =
                         |> Html.map LoginMsg
 
                 Home ->
-                    div []
+                    div [ class "main-layout"]
                         [ budgetsSidePanel
                         , Home.view model.homeModel |> Html.map HomeMsg
                         ]
-
-                NotFound ->
+                BudgetDetail id ->
+                    div [ class "main-layout"]
+                        [ budgetsSidePanel
+                        , Budget.view model.budgetModel |> Html.map BudgetMsg
+                        ]
+                _ ->
                     h1 [] [ text "Not Found" ]
     in
     { title = "Elm Webpack Boilerplate"
