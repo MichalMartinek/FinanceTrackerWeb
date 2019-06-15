@@ -11,7 +11,7 @@ import Categories.List as Categories
 import Http
 import Users.Login as Login
 import Users.Register as Register
-import Profile
+import Users.Profile as Profile
 import Url
 
 

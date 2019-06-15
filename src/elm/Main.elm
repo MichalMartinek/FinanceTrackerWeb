@@ -15,8 +15,7 @@ import Html.Attributes exposing (class)
 import Users.Login as Login
 import Users.Register as Register
 import Ports
-import Profile
-import Requests
+import Users.Profile as Profile
 import Router exposing (..)
 import Task
 import Types exposing (..)
@@ -293,7 +292,7 @@ view model =
             Common.viewNavigation model.token Logout
 
         budgetsSidePanel =
-            Common.viewSidePanel model.profile
+            Common.viewSidePanel model.profile.data
 
         content =
             case model.route of

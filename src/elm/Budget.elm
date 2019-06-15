@@ -13,7 +13,7 @@ import Html.Events exposing (onClick)
 import Http
 import Json.Decode as D
 import Json.Decode.Extra as DecodeExtra
-import Profile exposing (Role)
+import Users.Types exposing (Role)
 import Time
 
 

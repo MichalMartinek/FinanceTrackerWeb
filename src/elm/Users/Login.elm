@@ -10,7 +10,8 @@ import Html exposing (Html, button, div, form, input, label, text)
 import Html.Attributes exposing (class, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Http
-import Requests
+import Api
+import Users.Json exposing (encodeLoginForm, decodeToken)
 
 
 type Msg
@@ -60,7 +61,7 @@ update { tagger, loginCmd } msg model =
 
             else
                 ( model
-                , Requests.fetchToken model.username model.password (tagger << GotToken)
+                , fetchToken model (tagger << GotToken)
                 )
 
         GotToken result ->
@@ -71,6 +72,23 @@ update { tagger, loginCmd } msg model =
                 Err _ ->
                     ( { model | failed = True }, Cmd.none )
 
+-- HTTP
+
+
+fetchToken : Model -> (Result Http.Error String -> msg) -> Cmd msg
+fetchToken model msg =
+    let
+        body =
+            encodeLoginForm model.password model.username
+    in
+    Http.post
+        { url = Api.apiUrl ++ "/api-auth/"
+        , body = Http.jsonBody body
+        , expect = Http.expectJson msg decodeToken
+        }
+
+
+-- Views
 
 view : Model -> Html Msg
 view model =

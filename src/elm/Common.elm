@@ -5,7 +5,7 @@ import Formatters
 import Html exposing (Html, a, button, div, h1, h2, li, p, span, text, ul)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
-import Profile
+import Users.Types exposing(ProfileDataWrapper, BudgetWithRoleData)
 
 
 viewNavigation : Maybe String -> msg -> Html msg
@@ -28,8 +28,8 @@ viewNavigation token logoutCallback =
         ]
 
 
-viewSidePanel : Profile.Model -> Html msg
-viewSidePanel { data } =
+viewSidePanel : ProfileDataWrapper -> Html msg
+viewSidePanel data =
     div [ class "sidepanel" ] <|
         Api.defaultDataWrapperView data <|
             \profile ->
@@ -39,7 +39,7 @@ viewSidePanel { data } =
                 ]
 
 
-viewBudgetsListItem : Profile.BudgetWithRoleData -> Html msg
+viewBudgetsListItem : BudgetWithRoleData -> Html msg
 viewBudgetsListItem budget =
     li
         [ class "budgets-item" ]
