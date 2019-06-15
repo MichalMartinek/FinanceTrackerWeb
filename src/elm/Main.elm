@@ -134,7 +134,7 @@ urlChaned route model =
                 newBudgetLineForm =
                     BudgetLineForm.init <| BudgetLineForm.NewBudgetLine id
             in
-            ( { model | budgetModel = newBudgetModel, budgetLineForm = newBudgetLineForm }, Cmd.map BudgetMsg nCmd )
+            ( { newModel | budgetModel = newBudgetModel, budgetLineForm = newBudgetLineForm }, Cmd.map BudgetMsg nCmd )
 
         ( _, _ ) ->
             ( newModel, Cmd.none )
@@ -142,14 +142,14 @@ urlChaned route model =
 
 updateWithCmd : (subModel -> Model -> Model) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
 updateWithCmd toModel toMsg model ( subModel, subCmd ) =
-    ( toModel (Debug.log "sub" subModel) model
+    ( toModel subModel model
     , Cmd.map toMsg subCmd
     )
 
 
 updateWith : (subModel -> Model -> Model) -> Model -> ( subModel, Cmd Msg ) -> ( Model, Cmd Msg )
 updateWith toModel model ( subModel, subCmd ) =
-    ( toModel (Debug.log "sub" subModel) model
+    ( toModel subModel model
     , subCmd
     )
 
@@ -173,7 +173,10 @@ update msg model =
                     ( model, Nav.load href )
 
         UrlChanged url ->
-            urlChaned (toRoute url) model
+            urlChaned (Debug.log "url ch" (toRoute url)) model
+
+        CommonMsg commonMsg ->
+            (model, Common.update commonMsg model.key)
 
         LoginMsg loginMsg ->
             let
@@ -324,7 +327,7 @@ view model =
             Common.viewNavigation model.token Logout
 
         budgetsSidePanel =
-            Common.viewSidePanel model.profile.data
+            Common.viewSidePanel model.profile.data |> Html.map CommonMsg
         userList = 
             case model.budgetModel.data of
                 Api.Success d ->

@@ -1,15 +1,27 @@
-module Common exposing (viewNavigation, viewSidePanel)
+module Common exposing (Msg(..), update, viewBudgetsListItem, viewNavigation, viewSidePanel)
 
 import Api
+import Browser.Navigation as Nav
 import Formatters
 import Html exposing (Html, a, button, div, h1, h2, li, p, span, text, ul)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
-import Users.Types exposing(ProfileDataWrapper, BudgetWithRoleData)
+import Users.Types exposing (BudgetWithRoleData, ProfileDataWrapper)
 
 
-viewNavigation : Maybe String -> msg -> Html msg
-viewNavigation token logoutCallback =
+type Msg
+    = Redirect String
+
+
+update : Msg -> Nav.Key -> Cmd msg
+update msg navKey =
+    case msg of
+        Redirect s ->
+            Nav.pushUrl navKey s
+
+
+viewNavigation : Maybe String  -> msg -> Html msg
+viewNavigation token  logoutCallback =
     let
         btn =
             case token of
@@ -28,7 +40,7 @@ viewNavigation token logoutCallback =
         ]
 
 
-viewSidePanel : ProfileDataWrapper -> Html msg
+viewSidePanel : ProfileDataWrapper ->  Html Msg
 viewSidePanel data =
     div [ class "sidepanel" ] <|
         Api.defaultDataWrapperView data <|
@@ -39,11 +51,11 @@ viewSidePanel data =
                 ]
 
 
-viewBudgetsListItem : BudgetWithRoleData -> Html msg
+viewBudgetsListItem : BudgetWithRoleData -> Html Msg
 viewBudgetsListItem budget =
     li
         [ class "budgets-item" ]
-        [ a [ href <| "/budget/" ++ String.fromInt budget.budget.id ]
+        [ button [ onClick <| Redirect <| "/budget/" ++ String.fromInt budget.budget.id ]
             [ span [ class "budgets-item__title" ] [ text budget.budget.name ]
             , p [] [ text <| Formatters.toUtcString budget.budget.date_created ]
             ]

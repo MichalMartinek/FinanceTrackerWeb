@@ -14,7 +14,7 @@ import Users.Login as Login
 import Users.Register as Register
 import Users.Profile as Profile
 import Url
-
+import Common
 
 type alias Model =
     { key : Nav.Key
@@ -50,6 +50,7 @@ type Msg
     | LinkClicked Browser.UrlRequest
     | GotToken String
     | Logout
+    | CommonMsg Common.Msg
     | LoginMsg Login.Msg
     | RegisterMsg Register.Msg
     | HomeMsg Home.Msg
