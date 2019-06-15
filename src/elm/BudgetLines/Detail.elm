@@ -7,6 +7,7 @@ import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
 import Http
 import Categories.Helpers exposing (transformToName)
+import Formatters
 
 type alias Model =
     { delete : Api.DataWrapper Bool
@@ -80,6 +81,7 @@ viewBudgetsListItem budget onEdit onDelete=
         [ h1 [] [ text budget.description ]
         , p [] [ text <| transformToName budget.category ]
         , p [] [ text <| String.fromFloat budget.amount ]
+        , p [] [ text <| Formatters.toUtcString budget.date_created ]
         , div []
             [ button [ class "edit-button", onClick <| onEdit budget ] [ text "Edit" ]
             , button [ class "delete-button", onClick <| onDelete budget.id ] [ text "Delete" ]

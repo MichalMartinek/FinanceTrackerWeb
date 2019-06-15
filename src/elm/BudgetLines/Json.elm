@@ -9,11 +9,12 @@ import Categories.Json exposing (categoryDecoder)
 
 budgetLineDecoder : D.Decoder BudgetLine
 budgetLineDecoder =
-    D.map4 BudgetLine
+    D.map5 BudgetLine
         (D.field "id" D.int)
         (D.field "description" D.string)
         (D.field "amount" DecodeExtra.parseFloat)
         (D.field "category" categoryDecoder)
+        (D.field "date_created" DecodeExtra.datetime)
 
 
 encodeForm : BudgetLineForm -> Int -> E.Value
