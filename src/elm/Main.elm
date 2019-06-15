@@ -12,7 +12,8 @@ import Debug
 import Home
 import Html exposing (div, h1, text)
 import Html.Attributes exposing (class)
-import Login
+import Users.Login as Login
+import Users.Register as Register
 import Ports
 import Profile
 import Requests
@@ -89,6 +90,7 @@ init token url key =
       , route = initialRoute
       , token = token
       , loginModel = Login.init
+      , registerModel = Register.init
       , homeModel = Home.init
       , budgetModel = Budget.init
       , budgetForm = BudgetForm.init
@@ -176,7 +178,19 @@ update msg model =
             ( { model | loginModel = newLoginModel }
             , cmd
             )
-
+        RegisterMsg registerMsg ->
+            let
+                ( newLoginModel, cmd ) =
+                    Register.update
+                        { tagger = RegisterMsg
+                        , afterRegisterCmd = Nav.pushUrl model.key "/login"
+                        }
+                        registerMsg
+                        model.registerModel
+            in
+            ( { model | registerModel = newLoginModel }
+            , cmd
+            )
         HomeMsg homeMsg ->
             ( { model | homeModel = Home.update homeMsg model.homeModel }
             , Cmd.none
@@ -286,6 +300,9 @@ view model =
                 Login ->
                     Login.view model.loginModel
                         |> Html.map LoginMsg
+                Register ->
+                    Register.view model.registerModel
+                        |> Html.map RegisterMsg
 
                 Home ->
                     div [ class "main-layout" ]

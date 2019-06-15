@@ -9,7 +9,8 @@ import BudgetLines.Detail as BudgetLine
 import Home
 import Categories.List as Categories
 import Http
-import Login
+import Users.Login as Login
+import Users.Register as Register
 import Profile
 import Url
 
@@ -19,6 +20,7 @@ type alias Model =
     , route : Route
     , token : Maybe String
     , loginModel : Login.Model
+    , registerModel : Register.Model
     , homeModel : Home.Model
     , budgetModel : Budget.Model
     , budgetForm : BudgetForm.Model
@@ -35,6 +37,7 @@ type Route
     | EditBudget Int
     | NewBudget
     | Login
+    | Register
     | NotFound
 
 
@@ -45,6 +48,7 @@ type Msg
     | GotToken String
     | Logout
     | LoginMsg Login.Msg
+    | RegisterMsg Register.Msg
     | HomeMsg Home.Msg
     | BudgetMsg Budget.Msg
     | BudgetFormMsg BudgetForm.Msg

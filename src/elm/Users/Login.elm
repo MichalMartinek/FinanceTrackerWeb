@@ -1,4 +1,4 @@
-module Login exposing
+module Users.Login exposing
     ( Model
     , Msg(..)
     , init

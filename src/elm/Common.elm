@@ -2,7 +2,7 @@ module Common exposing (viewNavigation, viewSidePanel)
 
 import Api
 import Formatters
-import Html exposing (Html, a, button, div, h1, h2, li, p, text, span, ul)
+import Html exposing (Html, a, button, div, h1, h2, li, p, span, text, ul)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
 import Profile
@@ -14,7 +14,10 @@ viewNavigation token logoutCallback =
         btn =
             case token of
                 Nothing ->
-                    a [ href "/login" ] [ text "Login" ]
+                    div []
+                        [ a [ href "/login" ] [ text "Login" ]
+                        , a [ href "/create-user" ] [ text "Create user" ]
+                        ]
 
                 Just _ ->
                     button [ onClick logoutCallback ] [ text "Logout" ]
@@ -41,7 +44,7 @@ viewBudgetsListItem budget =
     li
         [ class "budgets-item" ]
         [ a [ href <| "/budget/" ++ String.fromInt budget.budget.id ]
-            [ span [class "budgets-item__title"] [ text budget.budget.name ]
+            [ span [ class "budgets-item__title" ] [ text budget.budget.name ]
             , p [] [ text <| Formatters.toUtcString budget.budget.date_created ]
             ]
         ]
