@@ -50,14 +50,16 @@ getBudgetId ft =
                     0
 
 
-
-init : FormType -> Model
-init ft =
-    { form =
-        { description = ""
+initForm : BudgetLineForm
+initForm =
+    { description = ""
         , amount = 0.0
         , category = ""
         }
+
+init : FormType -> Model
+init ft =
+    { form = initForm
     , formType = ft
     , send = Api.Clear
     }
@@ -79,7 +81,7 @@ update { token, tagger, reloadBudget, navKey } msg model =
     
     case msg of
         ClearForm ->
-            ( init model.formType , Cmd.none )
+            ( init <| NewBudgetLine <| getBudgetId model.formType, Cmd.none )
 
         InitLineForm id budgetLine ->
             ( { form =
@@ -138,7 +140,7 @@ update { token, tagger, reloadBudget, navKey } msg model =
         GotBudgetLine result ->
             case Debug.log "budget-posted" result of
                 Ok d ->
-                    ( { model | send = Api.Success d }, reloadBudget token <| getBudgetId model.formType)
+                    ( init <| NewBudgetLine <| getBudgetId model.formType, reloadBudget token <| getBudgetId model.formType)
 
                 Err err ->
                     ( { model | send = Api.Error err }, Cmd.none )
@@ -217,6 +219,7 @@ viewForm model categoriesList =
                 , select [ value model.form.category, onInput (\a -> CategoryChanged a) ] <| List.map viewCategoryItem categoriesList
                 ]
             , button [ type_ "submit" ] [ text "Save" ]
+            , button [ onClick ClearForm ] [ text "Cancel and create new" ]
             ]
         ]
 

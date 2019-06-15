@@ -2,20 +2,23 @@ module Budgets.Detail exposing (Model, Msg(..), fetchBudget, init, initLoading, 
 
 import Api
 import Browser.Navigation as Nav
-import BudgetLines.Types as BudgetLinesTypes exposing (BudgetLine)
 import BudgetLines.Detail as BudgetLinesDetail exposing (viewBudgetsListItem)
+import BudgetLines.Types as BudgetLinesTypes exposing (BudgetLine)
+import Budgets.Json exposing (budgetDecoder)
+import Budgets.Types exposing (Budget)
 import Debug
 import Formatters
 import Html exposing (a, button, div, h1, h2, p, text)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
 import Http
-import Users.Types exposing (Role)
 import Time
-import Budgets.Types exposing (Budget)
-import Budgets.Json exposing (budgetDecoder)
+import Users.Types exposing (Role)
+
+
 
 -- Model
+
 
 type alias Model =
     { data : Api.DataWrapper Budget
@@ -76,7 +79,6 @@ update { token, tagger, navKey } msg model =
 
 
 
-
 -- HTTP
 
 
@@ -120,11 +122,10 @@ deleteBudget token id msg =
 -- Views
 
 
-
 viewBudgetsLines : List BudgetLine -> (BudgetLine -> msg) -> (Int -> msg) -> Html.Html msg
 viewBudgetsLines budgets onEdit onDelete =
     div [] <|
-        List.map3 viewBudgetsListItem budgets (List.repeat (List.length budgets) onEdit) (List.repeat (List.length budgets) onDelete)
+        List.map3 viewBudgetsListItem (List.sortWith (\a b -> compare (Time.toMillis Time.utc a.date_created) (Time.toMillis Time.utc b.date_created)) budgets) (List.repeat (List.length budgets) onEdit) (List.repeat (List.length budgets) onDelete)
 
 
 view : Model -> (Budget -> msg) -> (Int -> msg) -> (Int -> msg) -> (Int -> BudgetLine -> msg) -> (Int -> Int -> msg) -> Html.Html msg
