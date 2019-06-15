@@ -4,6 +4,7 @@ import Browser
 import Browser.Navigation as Nav
 import Budgets.Detail as Budget
 import Budgets.Form as BudgetForm
+import Budgets.Settings as BudgetSettings
 import BudgetLines.Form as BudgetLineForm
 import BudgetLines.Detail as BudgetLine
 import Home.Page as Home
@@ -24,6 +25,7 @@ type alias Model =
     , homeModel : Home.Model
     , budgetModel : Budget.Model
     , budgetForm : BudgetForm.Model
+    , budgetSettings : BudgetSettings.Model
     , budgetLineModel : BudgetLine.Model
     , budgetLineForm : BudgetLineForm.Model
     , categories : Categories.Model
@@ -34,6 +36,7 @@ type alias Model =
 type Route
     = Home
     | BudgetDetail Int
+    | BudgetSettings Int
     | EditBudget Int
     | NewBudget
     | Login
@@ -52,6 +55,7 @@ type Msg
     | HomeMsg Home.Msg
     | BudgetMsg Budget.Msg
     | BudgetFormMsg BudgetForm.Msg
+    | BudgetSettingsMsg BudgetSettings.Msg
     | BudgetLineMsg BudgetLine.Msg
     | BudgetLineFormMsg BudgetLineForm.Msg
     | CategoriesMsg Categories.Msg

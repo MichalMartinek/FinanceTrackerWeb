@@ -34,6 +34,15 @@ toRole str =
         _ ->
             Viewer   
 
+fromRole : Role -> String
+fromRole str = 
+    case str of
+        Admin ->
+            "ADMIN"
+    
+        Viewer ->
+            "VIEWER"          
+
 budgetDecoder : D.Decoder BudgetData
 budgetDecoder =
     D.map5 BudgetData
@@ -57,3 +66,26 @@ profileDecoder =
         (D.field "id" D.int)
         (D.field "username" D.string)
         (D.field "budgets" (D.list budgetWithRoleDecoder))
+
+
+userDecoder : D.Decoder User
+userDecoder =
+    D.map2 User
+        (D.field "id" D.int)
+        (D.field "username" D.string)
+
+userWithRoleDecoder : D.Decoder UserWithRole
+userWithRoleDecoder =
+    D.map3 UserWithRole
+        (D.field "user" userDecoder)
+        (D.field "rel" <| D.map toRole D.string)
+        (D.field "id" <| D.int)
+
+
+encodeRole : Int -> Int -> Role -> E.Value
+encodeRole budgetId userId role =
+        E.object
+                [ ( "budget_id", E.int budgetId )
+                , ( "user_id", E.int userId )
+                , ( "rel", E.string <| fromRole role )
+                ]

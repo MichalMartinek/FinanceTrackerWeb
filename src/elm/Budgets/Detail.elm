@@ -127,13 +127,14 @@ viewBudgetsLines budgets onEdit onDelete =
         List.map3 viewBudgetsListItem budgets (List.repeat (List.length budgets) onEdit) (List.repeat (List.length budgets) onDelete)
 
 
-view : Model -> (Budget -> msg) -> (Int -> msg) -> (Int -> BudgetLine -> msg) -> (Int -> Int -> msg) -> Html.Html msg
-view { data } editMsg deleteMsg editLineMsg deleteLineMsg =
+view : Model -> (Budget -> msg) -> (Int -> msg) -> (Int -> msg) -> (Int -> BudgetLine -> msg) -> (Int -> Int -> msg) -> Html.Html msg
+view { data } editMsg deleteMsg settingsMsg editLineMsg deleteLineMsg =
     div [] <|
         Api.defaultDataWrapperView data <|
             \budget ->
                 [ h2 [] [ text (Debug.log "Profile" budget).name ]
                 , button [ class "edit-button", onClick (editMsg budget) ] [ text "Editovat" ]
                 , button [ class "delete-button", onClick (deleteMsg budget.id) ] [ text "Smazat" ]
+                , button [ class "delete-button", onClick (settingsMsg budget.id) ] [ text "Settings" ]
                 , viewBudgetsLines budget.lines (editLineMsg budget.id) (deleteLineMsg budget.id)
                 ]

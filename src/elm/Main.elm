@@ -6,6 +6,7 @@ import Budgets.Detail as Budget
 import BudgetLines.Detail as BudgetLine
 import BudgetLines.Form as BudgetLineForm
 import Budgets.Form as BudgetForm
+import Budgets.Settings as BudgetSettings
 import Categories.List as Categories
 import Common
 import Debug
@@ -20,6 +21,7 @@ import Router exposing (..)
 import Task
 import Types exposing (..)
 import Url
+import Api
 
 
 main =
@@ -53,6 +55,14 @@ init token url key =
                 _ ->
                     BudgetLineForm.NoneSelected
 
+        budgetSettingsId =
+            case initialRoute of
+                BudgetSettings id ->
+                    Just id
+
+                _ ->
+                    Nothing
+
         redirectCmd =
             case ( initialRoute, token ) of
                 ( Home, Nothing ) ->
@@ -62,6 +72,9 @@ init token url key =
                     Nav.pushUrl key "/"
 
                 ( BudgetDetail id, Just t ) ->
+                    Cmd.batch [ loadProfileCmd t, Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget ]
+
+                ( BudgetSettings id, Just t ) ->
                     Cmd.batch [ loadProfileCmd t, Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget ]
 
                 ( EditBudget id, Just t ) ->
@@ -93,6 +106,7 @@ init token url key =
       , homeModel = Home.init
       , budgetModel = Budget.init
       , budgetForm = BudgetForm.init
+      , budgetSettings = BudgetSettings.init budgetSettingsId
       , budgetLineModel = BudgetLine.init
       , budgetLineForm = BudgetLineForm.init budgetLineFormType
       , categories = Categories.init
@@ -226,7 +240,25 @@ update msg model =
             ( { model | budgetForm = newLoginModel }
             , cmd
             )
+        
+        BudgetSettingsMsg budgetSettingsMsg ->
+            let
+                args =
+                    { token = modelToken
+                    , tagger = BudgetSettingsMsg
+                    , navKey = model.key
+                    , reloadCmd = (\id -> Cmd.map BudgetMsg <| Budget.fetchBudget modelToken id Budget.GotBudget)
+                    }
 
+                ( newLoginModel, cmd ) =
+                    BudgetSettings.update
+                        args
+                        budgetSettingsMsg
+                        model.budgetSettings
+            in
+            ( { model | budgetSettings = newLoginModel }
+            , cmd
+            )
         BudgetLineMsg budgetLineMsg ->
             let
                 args =
@@ -293,7 +325,13 @@ view model =
 
         budgetsSidePanel =
             Common.viewSidePanel model.profile.data
-
+        userList = 
+            case model.budgetModel.data of
+                Api.Success d ->
+                    d.users
+                _ ->
+                    []
+                    
         content =
             case model.route of
                 Login ->
@@ -312,8 +350,14 @@ view model =
                 BudgetDetail id ->
                     div [ class "main-layout" ]
                         [ budgetsSidePanel
-                        , Budget.view model.budgetModel (BudgetFormMsg << BudgetForm.InitForm) (BudgetMsg << Budget.DeleteBudget) (\a b -> BudgetLineForm.InitLineForm a b |> BudgetLineFormMsg) (\a b -> BudgetLine.DeleteBudgetLine a b |> BudgetLineMsg)
+                        , Budget.view model.budgetModel (BudgetFormMsg << BudgetForm.InitForm) (BudgetMsg << Budget.DeleteBudget) (BudgetSettingsMsg << BudgetSettings.SetBudget)  (\a b -> BudgetLineForm.InitLineForm a b |> BudgetLineFormMsg) (\a b -> BudgetLine.DeleteBudgetLine a b |> BudgetLineMsg)
                         , BudgetLineForm.viewForm model.budgetLineForm (Categories.getList model.categories) |> Html.map BudgetLineFormMsg
+                        ]
+
+                BudgetSettings id ->
+                    div [ class "main-layout" ]
+                        [ budgetsSidePanel
+                        , BudgetSettings.view model.budgetSettings userList |> Html.map BudgetSettingsMsg
                         ]
 
                 NewBudget ->

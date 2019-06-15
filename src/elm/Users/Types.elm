@@ -1,7 +1,8 @@
-module Users.Types exposing (..)
+module Users.Types exposing (BudgetData, BudgetWithRoleData, ProfileData, ProfileDataWrapper, Role(..), User, UserWithRole)
 
 import Api
 import Time
+
 
 type alias BudgetData =
     { id : Int
@@ -29,4 +30,19 @@ type alias ProfileData =
     , budgets : List BudgetWithRoleData
     }
 
-type alias ProfileDataWrapper = Api.DataWrapper ProfileData
+
+type alias ProfileDataWrapper =
+    Api.DataWrapper ProfileData
+
+
+type alias User =
+    { id : Int
+    , username : String
+    }
+
+
+type alias UserWithRole =
+    { user : User
+    , rel : Role
+    , id : Int
+    }
