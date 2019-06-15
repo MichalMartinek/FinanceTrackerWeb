@@ -2,7 +2,7 @@ module Types exposing (Model, Msg(..), Route(..))
 
 import Browser
 import Browser.Navigation as Nav
-import Budget
+import Budgets.Detail as Budget
 import Budgets.Form as BudgetForm
 import BudgetLines.Form as BudgetLineForm
 import BudgetLines.Detail as BudgetLine

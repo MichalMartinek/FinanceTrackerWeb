@@ -2,7 +2,7 @@ module BudgetLines.Form exposing (FormType(..), Model, Msg(..), init, sendBudget
 
 import Api
 import Browser.Navigation as Nav
-import Budget
+import Budgets.Types exposing (Budget)
 import BudgetLines.Types exposing (..)
 import BudgetLines.Json exposing (..)
 import Debug

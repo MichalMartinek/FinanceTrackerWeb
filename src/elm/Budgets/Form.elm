@@ -2,7 +2,8 @@ module Budgets.Form exposing (FormType(..), Model, Msg(..), encodeForm, init, se
 
 import Api
 import Browser.Navigation as Nav
-import Budget
+import Budgets.Types exposing (Budget)
+import Budgets.Json exposing (budgetDecoder)
 import Debug
 import Html exposing (Html, a, button, div, form, h1, h2, input, label, span, text, textarea)
 import Html.Attributes exposing (disabled, type_, value)
@@ -20,18 +21,18 @@ type alias Model =
     { name : String
     , currency : String
     , formType : FormType
-    , send : Api.DataWrapper Budget.Budget
+    , send : Api.DataWrapper Budget
     }
 
 
 type Msg
     = ClearForm
-    | InitForm Budget.Budget
+    | InitForm Budget
     | NameChanged String
     | CurrencyChanged String
     | FormTypeChanged FormType
     | Submit
-    | GotBudget (Result Http.Error Budget.Budget)
+    | GotBudget (Result Http.Error Budget)
 
 
 init : Model
@@ -127,7 +128,7 @@ viewForm model =
         ]
 
 
-sendBudget : String -> Model -> (Result Http.Error Budget.Budget -> msg) -> Cmd msg
+sendBudget : String -> Model -> (Result Http.Error Budget -> msg) -> Cmd msg
 sendBudget token model msg =
     let
         headers =
@@ -155,7 +156,7 @@ sendBudget token model msg =
         , headers = headers
         , url = Api.apiUrl ++ url
         , body = Http.jsonBody <| encodeForm model
-        , expect = Http.expectJson msg Budget.budgetDecoder
+        , expect = Http.expectJson msg budgetDecoder
         , timeout = Nothing
         , tracker = Nothing
         }

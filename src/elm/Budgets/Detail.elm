@@ -1,8 +1,7 @@
-module Budget exposing (Budget, Model, Msg(..), budgetDecoder, fetchBudget, init, initLoading, update, view)
+module Budgets.Detail exposing (Model, Msg(..), fetchBudget, init, initLoading, update, view)
 
 import Api
 import Browser.Navigation as Nav
-import BudgetLines.Json as BudgetLinesJson exposing (budgetLineDecoder)
 import BudgetLines.Types as BudgetLinesTypes exposing (BudgetLine)
 import BudgetLines.Detail as BudgetLinesDetail exposing (viewBudgetsListItem)
 import Debug
@@ -11,25 +10,12 @@ import Html exposing (a, button, div, h1, h2, p, text)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
 import Http
-import Json.Decode as D
-import Json.Decode.Extra as DecodeExtra
 import Users.Types exposing (Role)
 import Time
-
-
+import Budgets.Types exposing (Budget)
+import Budgets.Json exposing (budgetDecoder)
 
 -- Model
-
-
-type alias Budget =
-    { id : Int
-    , currency : String
-    , name : String
-    , date_created : Time.Posix
-    , date_updated : Time.Posix
-    , lines : List BudgetLine
-    }
-
 
 type alias Model =
     { data : Api.DataWrapper Budget
@@ -88,20 +74,6 @@ update { token, tagger, navKey } msg model =
                 Err err ->
                     ( { model | delete = Api.Error err }, Cmd.none )
 
-
-
--- JSON
-
-
-budgetDecoder : D.Decoder Budget
-budgetDecoder =
-    D.map6 Budget
-        (D.field "id" D.int)
-        (D.field "currency" D.string)
-        (D.field "name" D.string)
-        (D.field "date_created" DecodeExtra.datetime)
-        (D.field "date_updated" DecodeExtra.datetime)
-        (D.field "lines" (D.list budgetLineDecoder))
 
 
 

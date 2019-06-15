@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Browser exposing (Document)
 import Browser.Navigation as Nav
-import Budget
+import Budgets.Detail as Budget
 import BudgetLines.Detail as BudgetLine
 import BudgetLines.Form as BudgetLineForm
 import Budgets.Form as BudgetForm
