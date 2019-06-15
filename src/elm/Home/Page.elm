@@ -1,4 +1,4 @@
-module Home exposing
+module Home.Page exposing
     ( Model
     , Msg(..)
     , init

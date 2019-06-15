@@ -6,7 +6,7 @@ import Budgets.Detail as Budget
 import Budgets.Form as BudgetForm
 import BudgetLines.Form as BudgetLineForm
 import BudgetLines.Detail as BudgetLine
-import Home
+import Home.Page as Home
 import Categories.List as Categories
 import Http
 import Users.Login as Login

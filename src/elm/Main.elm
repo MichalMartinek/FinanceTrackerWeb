@@ -9,7 +9,7 @@ import Budgets.Form as BudgetForm
 import Categories.List as Categories
 import Common
 import Debug
-import Home
+import Home.Page as Home
 import Html exposing (div, h1, text)
 import Html.Attributes exposing (class)
 import Users.Login as Login
