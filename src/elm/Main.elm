@@ -3,7 +3,9 @@ module Main exposing (main)
 import Browser exposing (Document)
 import Browser.Navigation as Nav
 import Budget
+import BudgetLines.Detail as BudgetLine
 import Budgets.Form as BudgetForm
+import BudgetLines.Form as BudgetLineForm
 import Common
 import Debug
 import Home
@@ -38,7 +40,13 @@ init token url key =
 
         loadProfileCmd t =
             Cmd.map ProfileMsg <| Profile.fetchProfile t
-
+        budgetLineFormType = 
+            case initialRoute of
+                BudgetDetail id ->
+                    BudgetLineForm.NewBudgetLine id
+                _ ->
+                    BudgetLineForm.NoneSelected
+                    
         redirectCmd =
             case ( initialRoute, token ) of
                 ( Home, Nothing ) ->
@@ -76,8 +84,10 @@ init token url key =
       , token = token
       , loginModel = Login.init
       , homeModel = Home.init
-      , budgetForm = BudgetForm.init
       , budgetModel = Budget.init
+      , budgetForm = BudgetForm.init
+      , budgetLineModel = BudgetLine.init
+      , budgetLineForm = BudgetLineForm.init budgetLineFormType
       , profile = Profile.init
       }
     , redirectCmd
@@ -95,7 +105,11 @@ urlChaned route model =
             Profile.initLoading t newModel.profile |> updateWithCmd (\subModel lModel -> { lModel | profile = subModel }) ProfileMsg newModel
 
         ( BudgetDetail id, Just t ) ->
-            Budget.initLoading t id newModel.budgetModel |> updateWithCmd (\subModel lModel -> { lModel | budgetModel = subModel }) BudgetMsg newModel
+            let
+                (newBudgetModel, nCmd) =  Budget.initLoading t id newModel.budgetModel
+                newBudgetLineForm = BudgetLineForm.init <| BudgetLineForm.NewBudgetLine id
+            in
+            ({model | budgetModel = newBudgetModel, budgetLineForm = newBudgetLineForm}, Cmd.map BudgetMsg nCmd)
 
         ( _, _ ) ->
             ( newModel, Cmd.none )
@@ -190,6 +204,35 @@ update msg model =
             , cmd
             )
 
+        BudgetLineMsg budgetLineMsg ->
+            let
+                args =
+                    { token = modelToken
+                    , tagger = BudgetLineMsg
+                    , reloadBudget = (\ t id -> Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget)
+                    }
+            in
+            BudgetLine.update args budgetLineMsg model.budgetLineModel |> updateWith (\subModel lModel -> { lModel | budgetLineModel = subModel }) model
+
+        BudgetLineFormMsg budgetLineFormMsg ->
+            let
+                args =
+                    { token = modelToken
+                    , tagger = BudgetLineFormMsg
+                    , reloadBudget = (\ t id -> Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget)
+                    , navKey = model.key
+                    }
+
+                ( newLoginModel, cmd ) =
+                    BudgetLineForm.update
+                        args
+                        budgetLineFormMsg
+                        model.budgetLineForm
+            in
+            ( { model | budgetLineForm = newLoginModel }
+            , cmd
+            )
+
         GotToken token ->
             ( { model | token = Just token }
             , Cmd.batch
@@ -234,7 +277,8 @@ view model =
                 BudgetDetail id ->
                     div [ class "main-layout" ]
                         [ budgetsSidePanel
-                        , Budget.view model.budgetModel (BudgetFormMsg << BudgetForm.InitForm) (BudgetMsg << Budget.DeleteBudget)
+                        , Budget.view model.budgetModel (BudgetFormMsg << BudgetForm.InitForm) (BudgetMsg << Budget.DeleteBudget) (\ a b -> BudgetLineForm.InitLineForm a b  |> BudgetLineFormMsg ) (\ a b -> BudgetLine.DeleteBudgetLine a b  |> BudgetLineMsg )
+                        , BudgetLineForm.viewForm model.budgetLineForm |> Html.map BudgetLineFormMsg
                         ]
 
                 NewBudget ->

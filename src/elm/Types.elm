@@ -4,6 +4,8 @@ import Browser
 import Browser.Navigation as Nav
 import Budget
 import Budgets.Form as BudgetForm
+import BudgetLines.Form as BudgetLineForm
+import BudgetLines.Detail as BudgetLine
 import Home
 import Http
 import Login
@@ -19,6 +21,8 @@ type alias Model =
     , homeModel : Home.Model
     , budgetModel : Budget.Model
     , budgetForm : BudgetForm.Model
+    , budgetLineModel : BudgetLine.Model
+    , budgetLineForm : BudgetLineForm.Model
     , profile : Profile.Model
     }
 
@@ -42,4 +46,6 @@ type Msg
     | HomeMsg Home.Msg
     | BudgetMsg Budget.Msg
     | BudgetFormMsg BudgetForm.Msg
+    | BudgetLineMsg BudgetLine.Msg
+    | BudgetLineFormMsg BudgetLineForm.Msg
     | ProfileMsg Profile.Msg

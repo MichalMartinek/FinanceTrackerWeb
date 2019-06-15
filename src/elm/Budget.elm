@@ -2,6 +2,9 @@ module Budget exposing (Budget, Model, Msg(..), budgetDecoder, fetchBudget, init
 
 import Api
 import Browser.Navigation as Nav
+import BudgetLines.Json as BudgetLinesJson exposing (budgetLineDecoder, categoryDecoder)
+import BudgetLines.Types as BudgetLinesTypes exposing (BudgetLine, Category)
+import BudgetLines.Detail as BudgetLinesDetail exposing (viewBudgetsListItem)
 import Debug
 import Formatters
 import Html exposing (a, button, div, h1, h2, p, text)
@@ -16,19 +19,6 @@ import Time
 
 
 -- Model
-
-
-type alias Category =
-    { code : String
-    }
-
-
-type alias BudgetLine =
-    { id : Int
-    , description : String
-    , amount : Float
-    , category : Category
-    }
 
 
 type alias Budget =
@@ -114,21 +104,6 @@ budgetDecoder =
         (D.field "lines" (D.list budgetLineDecoder))
 
 
-budgetLineDecoder : D.Decoder BudgetLine
-budgetLineDecoder =
-    D.map4 BudgetLine
-        (D.field "id" D.int)
-        (D.field "description" D.string)
-        (D.field "amount" DecodeExtra.parseFloat)
-        (D.field "category" categoryDecoder)
-
-
-categoryDecoder : D.Decoder Category
-categoryDecoder =
-    D.map Category
-        (D.field "code" D.string)
-
-
 
 -- HTTP
 
@@ -173,27 +148,20 @@ deleteBudget token id msg =
 -- Views
 
 
-viewBudgetsListItem : BudgetLine -> Html.Html msg
-viewBudgetsListItem budget =
-    div []
-        [ h1 [] [ text budget.description ]
-        , p [] [ text <| String.fromFloat budget.amount ]
-        ]
 
-
-viewBudgetsLines : List BudgetLine -> Html.Html msg
-viewBudgetsLines budgets =
+viewBudgetsLines : List BudgetLine -> (BudgetLine -> msg) -> (Int -> msg) -> Html.Html msg
+viewBudgetsLines budgets onEdit onDelete =
     div [] <|
-        List.map viewBudgetsListItem budgets
+        List.map3 viewBudgetsListItem budgets (List.repeat (List.length budgets) onEdit) (List.repeat (List.length budgets) onDelete)
 
 
-view : Model -> (Budget -> msg) -> (Int -> msg) -> Html.Html msg
-view { data } editMsg deleteMsg =
+view : Model -> (Budget -> msg) -> (Int -> msg) -> (Int -> BudgetLine -> msg) -> (Int -> Int -> msg) -> Html.Html msg
+view { data } editMsg deleteMsg editLineMsg deleteLineMsg =
     div [] <|
         Api.defaultDataWrapperView data <|
             \budget ->
                 [ h2 [] [ text (Debug.log "Profile" budget).name ]
                 , button [ class "edit-button", onClick (editMsg budget) ] [ text "Editovat" ]
                 , button [ class "delete-button", onClick (deleteMsg budget.id) ] [ text "Smazat" ]
-                , viewBudgetsLines budget.lines
+                , viewBudgetsLines budget.lines (editLineMsg budget.id) (deleteLineMsg budget.id)
                 ]
