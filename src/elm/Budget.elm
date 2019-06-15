@@ -2,8 +2,8 @@ module Budget exposing (Budget, Model, Msg(..), budgetDecoder, fetchBudget, init
 
 import Api
 import Browser.Navigation as Nav
-import BudgetLines.Json as BudgetLinesJson exposing (budgetLineDecoder, categoryDecoder)
-import BudgetLines.Types as BudgetLinesTypes exposing (BudgetLine, Category)
+import BudgetLines.Json as BudgetLinesJson exposing (budgetLineDecoder)
+import BudgetLines.Types as BudgetLinesTypes exposing (BudgetLine)
 import BudgetLines.Detail as BudgetLinesDetail exposing (viewBudgetsListItem)
 import Debug
 import Formatters

@@ -4,8 +4,9 @@ import Browser exposing (Document)
 import Browser.Navigation as Nav
 import Budget
 import BudgetLines.Detail as BudgetLine
-import Budgets.Form as BudgetForm
 import BudgetLines.Form as BudgetLineForm
+import Budgets.Form as BudgetForm
+import Categories.List as Categories
 import Common
 import Debug
 import Home
@@ -38,15 +39,20 @@ init token url key =
         initialRoute =
             Debug.log "value" (toRoute url)
 
+        loadCategoriesCmd =
+            Cmd.map CategoriesMsg <| Categories.fetchCategories
+
         loadProfileCmd t =
             Cmd.map ProfileMsg <| Profile.fetchProfile t
-        budgetLineFormType = 
+
+        budgetLineFormType =
             case initialRoute of
                 BudgetDetail id ->
                     BudgetLineForm.NewBudgetLine id
+
                 _ ->
                     BudgetLineForm.NoneSelected
-                    
+
         redirectCmd =
             case ( initialRoute, token ) of
                 ( Home, Nothing ) ->
@@ -88,9 +94,10 @@ init token url key =
       , budgetForm = BudgetForm.init
       , budgetLineModel = BudgetLine.init
       , budgetLineForm = BudgetLineForm.init budgetLineFormType
+      , categories = Categories.init
       , profile = Profile.init
       }
-    , redirectCmd
+    , Cmd.batch [ loadCategoriesCmd, redirectCmd ]
     )
 
 
@@ -106,10 +113,13 @@ urlChaned route model =
 
         ( BudgetDetail id, Just t ) ->
             let
-                (newBudgetModel, nCmd) =  Budget.initLoading t id newModel.budgetModel
-                newBudgetLineForm = BudgetLineForm.init <| BudgetLineForm.NewBudgetLine id
+                ( newBudgetModel, nCmd ) =
+                    Budget.initLoading t id newModel.budgetModel
+
+                newBudgetLineForm =
+                    BudgetLineForm.init <| BudgetLineForm.NewBudgetLine id
             in
-            ({model | budgetModel = newBudgetModel, budgetLineForm = newBudgetLineForm}, Cmd.map BudgetMsg nCmd)
+            ( { model | budgetModel = newBudgetModel, budgetLineForm = newBudgetLineForm }, Cmd.map BudgetMsg nCmd )
 
         ( _, _ ) ->
             ( newModel, Cmd.none )
@@ -209,7 +219,7 @@ update msg model =
                 args =
                     { token = modelToken
                     , tagger = BudgetLineMsg
-                    , reloadBudget = (\ t id -> Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget)
+                    , reloadBudget = \t id -> Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget
                     }
             in
             BudgetLine.update args budgetLineMsg model.budgetLineModel |> updateWith (\subModel lModel -> { lModel | budgetLineModel = subModel }) model
@@ -219,7 +229,7 @@ update msg model =
                 args =
                     { token = modelToken
                     , tagger = BudgetLineFormMsg
-                    , reloadBudget = (\ t id -> Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget)
+                    , reloadBudget = \t id -> Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget
                     , navKey = model.key
                     }
 
@@ -230,6 +240,15 @@ update msg model =
                         model.budgetLineForm
             in
             ( { model | budgetLineForm = newLoginModel }
+            , cmd
+            )
+
+        CategoriesMsg catMsg ->
+            let
+                ( newCategoriesModel, cmd ) =
+                    Categories.update catMsg model.categories
+            in
+            ( { model | categories = newCategoriesModel }
             , cmd
             )
 
@@ -277,8 +296,8 @@ view model =
                 BudgetDetail id ->
                     div [ class "main-layout" ]
                         [ budgetsSidePanel
-                        , Budget.view model.budgetModel (BudgetFormMsg << BudgetForm.InitForm) (BudgetMsg << Budget.DeleteBudget) (\ a b -> BudgetLineForm.InitLineForm a b  |> BudgetLineFormMsg ) (\ a b -> BudgetLine.DeleteBudgetLine a b  |> BudgetLineMsg )
-                        , BudgetLineForm.viewForm model.budgetLineForm |> Html.map BudgetLineFormMsg
+                        , Budget.view model.budgetModel (BudgetFormMsg << BudgetForm.InitForm) (BudgetMsg << Budget.DeleteBudget) (\a b -> BudgetLineForm.InitLineForm a b |> BudgetLineFormMsg) (\a b -> BudgetLine.DeleteBudgetLine a b |> BudgetLineMsg)
+                        , BudgetLineForm.viewForm model.budgetLineForm (Categories.getList model.categories) |> Html.map BudgetLineFormMsg
                         ]
 
                 NewBudget ->

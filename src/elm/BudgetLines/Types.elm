@@ -1,10 +1,6 @@
 module BudgetLines.Types exposing (..)
 
-
-type alias Category =
-    { code : String
-    }
-
+import Categories.Types exposing (Category)
 
 type alias BudgetLine =
     { id : Int

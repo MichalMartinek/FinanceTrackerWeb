@@ -5,6 +5,8 @@ import Json.Encode as E
 import Json.Decode as D
 import Json.Decode.Extra as DecodeExtra
 
+import Categories.Json exposing (categoryDecoder)
+
 budgetLineDecoder : D.Decoder BudgetLine
 budgetLineDecoder =
     D.map4 BudgetLine
@@ -12,12 +14,6 @@ budgetLineDecoder =
         (D.field "description" D.string)
         (D.field "amount" DecodeExtra.parseFloat)
         (D.field "category" categoryDecoder)
-
-
-categoryDecoder : D.Decoder Category
-categoryDecoder =
-    D.map Category
-        (D.field "code" D.string)
 
 
 encodeForm : BudgetLineForm -> Int -> E.Value

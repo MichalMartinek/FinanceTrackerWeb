@@ -6,11 +6,13 @@ import Budget
 import BudgetLines.Types exposing (..)
 import BudgetLines.Json exposing (..)
 import Debug
-import Html exposing (Html, a, button, div, form, h1, h2, input, label, span, text, textarea)
+import Html exposing (Html, a, button, div, form, h1, h2, input, label, span, text, textarea, select, option)
 import Html.Attributes exposing (disabled, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Http
-
+import String.Extra
+import Categories.Types exposing (Category)
+import Categories.Helpers exposing (transformToName)
 
 type FormType
     = NoneSelected
@@ -34,6 +36,19 @@ type Msg
     | FormTypeChanged FormType
     | Submit
     | GotBudgetLine (Result Http.Error ())
+
+
+getBudgetId : FormType -> Int
+getBudgetId ft = 
+            case ft of
+                NewBudgetLine id ->
+                    id
+
+                EditBudgetLine id _ ->
+                    id
+                NoneSelected ->
+                    0
+
 
 
 init : FormType -> Model
@@ -128,51 +143,7 @@ update { token, tagger, reloadBudget, navKey } msg model =
                 Err err ->
                     ( { model | send = Api.Error err }, Cmd.none )
 
-
-viewForm : Model -> Html Msg
-viewForm model =
-    let
-        title =
-            case model.formType of
-                NewBudgetLine _ ->
-                    "Add new"
-
-                EditBudgetLine _ _ ->
-                    "Edit"
-                NoneSelected ->
-                    ""
-    in
-    div []
-        [ h1 [] [ text title ]
-        , form [ onSubmit Submit ]
-            [ div []
-                [ label [] [ text "Description" ]
-                , input [ type_ "text", value model.form.description, onInput (\a -> DescriptionChanged a) ] []
-                ]
-            , div []
-                [ label [] [ text "Budget Amount" ]
-                , input [ type_ "number", value (String.fromFloat model.form.amount), onInput (\a -> AmountChanged a) ] []
-                ]
-            , div []
-                [ label [] [ text "Category" ]
-                , input [ type_ "text", value model.form.category, onInput (\a -> CategoryChanged a) ] []
-                ]
-            , button [ type_ "submit" ] [ text "Save" ]
-            ]
-        ]
-
-
-getBudgetId : FormType -> Int
-getBudgetId ft = 
-            case ft of
-                NewBudgetLine id ->
-                    id
-
-                EditBudgetLine id _ ->
-                    id
-                NoneSelected ->
-                    0
-
+-- HTTP
 sendBudgetLine : String -> Model -> (Result Http.Error () -> msg) -> Cmd msg
 sendBudgetLine token model msg =
     let
@@ -208,3 +179,44 @@ sendBudgetLine token model msg =
         , timeout = Nothing
         , tracker = Nothing
         }
+
+-- View
+
+
+
+viewCategoryItem : Category -> Html Msg
+viewCategoryItem category =
+    option [value category.code] [text <| transformToName category]
+
+viewForm : Model -> List Category ->  Html Msg
+viewForm model categoriesList =
+    let
+        title =
+            case model.formType of
+                NewBudgetLine _ ->
+                    "Add new"
+
+                EditBudgetLine _ _ ->
+                    "Edit"
+                NoneSelected ->
+                    ""
+    in
+    div []
+        [ h1 [] [ text title ]
+        , form [ onSubmit Submit ]
+            [ div []
+                [ label [] [ text "Description" ]
+                , input [ type_ "text", value model.form.description, onInput (\a -> DescriptionChanged a) ] []
+                ]
+            , div []
+                [ label [] [ text "Budget Amount" ]
+                , input [ type_ "number", value (String.fromFloat model.form.amount), onInput (\a -> AmountChanged a) ] []
+                ]
+            , div []
+                [ label [] [ text "Category" ]
+                , select [ value model.form.category, onInput (\a -> CategoryChanged a) ] <| List.map viewCategoryItem categoriesList
+                ]
+            , button [ type_ "submit" ] [ text "Save" ]
+            ]
+        ]
+

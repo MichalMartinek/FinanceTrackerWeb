@@ -7,6 +7,7 @@ import Budgets.Form as BudgetForm
 import BudgetLines.Form as BudgetLineForm
 import BudgetLines.Detail as BudgetLine
 import Home
+import Categories.List as Categories
 import Http
 import Login
 import Profile
@@ -23,6 +24,7 @@ type alias Model =
     , budgetForm : BudgetForm.Model
     , budgetLineModel : BudgetLine.Model
     , budgetLineForm : BudgetLineForm.Model
+    , categories : Categories.Model
     , profile : Profile.Model
     }
 
@@ -48,4 +50,5 @@ type Msg
     | BudgetFormMsg BudgetForm.Msg
     | BudgetLineMsg BudgetLine.Msg
     | BudgetLineFormMsg BudgetLineForm.Msg
+    | CategoriesMsg Categories.Msg
     | ProfileMsg Profile.Msg

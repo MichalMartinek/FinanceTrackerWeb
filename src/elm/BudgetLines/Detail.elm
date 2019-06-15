@@ -6,7 +6,7 @@ import Html exposing (Html, a, button, div, h1, h2, p, text)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
 import Http
-
+import Categories.Helpers exposing (transformToName)
 
 type alias Model =
     { delete : Api.DataWrapper Bool
@@ -78,7 +78,7 @@ viewBudgetsListItem : BudgetLine -> (BudgetLine -> msg) -> (Int -> msg) -> Html 
 viewBudgetsListItem budget onEdit onDelete=
     div []
         [ h1 [] [ text budget.description ]
-        , p [] [ text budget.category.code ]
+        , p [] [ text <| transformToName budget.category ]
         , p [] [ text <| String.fromFloat budget.amount ]
         , div []
             [ button [ class "edit-button", onClick <| onEdit budget ] [ text "Edit" ]
