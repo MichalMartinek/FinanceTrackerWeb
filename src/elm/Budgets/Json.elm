@@ -1,9 +1,10 @@
-module Budgets.Json exposing (..)
+module Budgets.Json exposing (budgetDecoder, encodeForm)
 
+import BudgetLines.Json as BudgetLinesJson exposing (budgetLineDecoder)
+import Budgets.Types exposing (Budget)
 import Json.Decode as D
 import Json.Decode.Extra as DecodeExtra
-import Budgets.Types exposing (Budget)
-import BudgetLines.Json as BudgetLinesJson exposing (budgetLineDecoder)
+import Json.Encode as E
 import Users.Json exposing (userWithRoleDecoder)
 
 
@@ -18,3 +19,10 @@ budgetDecoder =
         (D.field "lines" (D.list budgetLineDecoder))
         (D.field "users" (D.list userWithRoleDecoder))
 
+
+encodeForm : String -> String -> E.Value
+encodeForm name currency =
+    E.object
+        [ ( "name", E.string name )
+        , ( "currency", E.string currency )
+        ]

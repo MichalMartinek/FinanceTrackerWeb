@@ -1,7 +1,6 @@
 module Categories.Json exposing (..)
 
 import Categories.Types exposing (..)
-import Json.Encode as E
 import Json.Decode as D
 
 categoryDecoder : D.Decoder Category

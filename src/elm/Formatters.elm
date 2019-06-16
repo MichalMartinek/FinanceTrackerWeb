@@ -1,10 +1,10 @@
-module Formatters exposing (toUtcString)
+module Formatters exposing (toUtcString, padMinutes, toIntMont)
 
 import Time exposing (..)
 
 
-toCzechMonth : Month -> Int
-toCzechMonth month =
+toIntMont : Month -> Int
+toIntMont month =
     case month of
         Jan ->
             1
@@ -53,7 +53,7 @@ toUtcString time =
     in
     String.fromInt (toDay zone time)
         ++ "."
-        ++ String.fromInt (toCzechMonth (toMonth zone time))
+        ++ String.fromInt (toIntMont (toMonth zone time))
         ++ "."
         ++ String.fromInt (toYear zone time)
         ++ " "

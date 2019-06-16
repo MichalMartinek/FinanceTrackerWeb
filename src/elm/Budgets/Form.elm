@@ -1,14 +1,13 @@
-module Budgets.Form exposing (FormType(..), Model, Msg(..), encodeForm, init, sendBudget, update, viewForm)
+module Budgets.Form exposing (FormType(..), Model, Msg(..), init, sendBudget, update, viewForm)
 
 import Api
 import Browser.Navigation as Nav
 import Budgets.Types exposing (Budget)
-import Budgets.Json exposing (budgetDecoder)
+import Budgets.Json exposing (budgetDecoder, encodeForm)
 import Html exposing (Html, a, button, div, form, h1, h2, input, label, span, text, textarea)
 import Html.Attributes exposing (class, disabled, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Http
-import Json.Encode as E
 
 
 type FormType
@@ -93,12 +92,6 @@ update { token, tagger, reloadProfile, navKey } msg model =
                     ( { model | send = Api.Error err }, Cmd.none )
 
 
-encodeForm : Model -> E.Value
-encodeForm m =
-    E.object
-        [ ( "name", E.string m.name )
-        , ( "currency", E.string m.currency )
-        ]
 
 
 viewForm : Model -> Html Msg
@@ -154,7 +147,7 @@ sendBudget token model msg =
         { method = method
         , headers = headers
         , url = Api.apiUrl ++ url
-        , body = Http.jsonBody <| encodeForm model
+        , body = Http.jsonBody <| encodeForm model.name model.currency
         , expect = Http.expectJson msg budgetDecoder
         , timeout = Nothing
         , tracker = Nothing
