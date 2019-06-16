@@ -6,7 +6,6 @@ import BudgetLines.Detail as BudgetLinesDetail exposing (viewBudgetsListItem)
 import BudgetLines.Types as BudgetLinesTypes exposing (BudgetLine)
 import Budgets.Json exposing (budgetDecoder)
 import Budgets.Types exposing (Budget, BudgetWrapper)
-import Debug
 import Formatters
 import Html exposing (Html, a, button, div, h1, h2, p, text)
 import Html.Attributes exposing (class, disabled, href)
@@ -59,7 +58,7 @@ update :
 update { token, tagger, navKey } msg model =
     case msg of
         GotBudget result ->
-            case Debug.log "budget" result of
+            case result of
                 Ok profile ->
                     ( { model | data = Api.Success profile }, Cmd.none )
 
@@ -142,7 +141,7 @@ view { data } editMsg deleteMsg settingsMsg editLineMsg deleteLineMsg =
     div [ class "main-layout__inner" ] <|
         Api.defaultDataWrapperView data <|
             \budget ->
-                [ h2 [] [ text (Debug.log "Profile" budget).name ]
+                [ h2 [] [ text budget.name ]
                 , viewRibbon budget.id (settingsMsg budget.id)
                 , button [ class "btn", onClick (editMsg budget) ] [ text "Edit" ]
                 , button [ class "btn", onClick (deleteMsg budget.id) ] [ text "Delete" ]

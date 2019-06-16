@@ -5,7 +5,6 @@ import Browser.Navigation as Nav
 import Budgets.Types exposing (Budget)
 import BudgetLines.Types exposing (..)
 import BudgetLines.Json exposing (..)
-import Debug
 import Html exposing (Html, a, button, div, form, h2, input, label, span, text, textarea, select, option)
 import Html.Attributes exposing (disabled, type_, value, class)
 import Html.Events exposing (onClick, onInput, onSubmit)
@@ -75,10 +74,6 @@ update :
     -> Model
     -> ( Model, Cmd msg )
 update { token, tagger, reloadBudget, navKey } msg model =
-    let
-        newModel = Debug.log "ads" model
-    in
-    
     case msg of
         ClearForm ->
             ( init <| NewBudgetLine <| getBudgetId model.formType, Cmd.none )
@@ -138,7 +133,7 @@ update { token, tagger, reloadBudget, navKey } msg model =
                 )
 
         GotBudgetLine result ->
-            case Debug.log "budget-posted" result of
+            case result of
                 Ok d ->
                     ( init <| NewBudgetLine <| getBudgetId model.formType, reloadBudget token <| getBudgetId model.formType)
 

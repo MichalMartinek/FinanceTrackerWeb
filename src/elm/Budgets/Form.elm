@@ -4,7 +4,6 @@ import Api
 import Browser.Navigation as Nav
 import Budgets.Types exposing (Budget)
 import Budgets.Json exposing (budgetDecoder)
-import Debug
 import Html exposing (Html, a, button, div, form, h1, h2, input, label, span, text, textarea)
 import Html.Attributes exposing (class, disabled, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
@@ -86,7 +85,7 @@ update { token, tagger, reloadProfile, navKey } msg model =
                 )
 
         GotBudget result ->
-            case Debug.log "budget-posted" result of
+            case result of
                 Ok d ->
                     ( { init | send = Api.Success d }, Cmd.batch [ reloadProfile token, Nav.pushUrl navKey ("/budget/" ++ String.fromInt d.id) ] )
 

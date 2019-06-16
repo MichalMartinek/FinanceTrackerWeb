@@ -1,28 +1,27 @@
 module Main exposing (main)
 
+import Api
 import Browser exposing (Document)
 import Browser.Navigation as Nav
-import Budgets.Detail as Budget
 import BudgetLines.Detail as BudgetLine
 import BudgetLines.Form as BudgetLineForm
+import Budgets.Detail as Budget
 import Budgets.Form as BudgetForm
 import Budgets.Settings as BudgetSettings
 import Budgets.Statistics as BudgetStatistics
 import Categories.List as Categories
 import Common
-import Debug
 import Home.Page as Home
 import Html exposing (div, h1, text)
 import Html.Attributes exposing (class)
-import Users.Login as Login
-import Users.Register as Register
 import Ports
-import Users.Profile as Profile
 import Router exposing (..)
 import Task
 import Types exposing (..)
 import Url
-import Api
+import Users.Login as Login
+import Users.Profile as Profile
+import Users.Register as Register
 
 
 main =
@@ -40,7 +39,7 @@ init : Maybe String -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init token url key =
     let
         initialRoute =
-            Debug.log "value" (toRoute url)
+            toRoute url
 
         loadCategoriesCmd =
             Cmd.map CategoriesMsg <| Categories.fetchCategories
@@ -141,7 +140,8 @@ urlChaned route model =
             ( { newModel | budgetModel = newBudgetModel, budgetLineForm = newBudgetLineForm }, Cmd.map BudgetMsg nCmd )
 
         ( NewBudget, _ ) ->
-            ( {newModel | budgetForm = BudgetForm.init}, Cmd.none )
+            ( { newModel | budgetForm = BudgetForm.init }, Cmd.none )
+
         ( _, _ ) ->
             ( newModel, Cmd.none )
 
@@ -179,10 +179,10 @@ update msg model =
                     ( model, Nav.load href )
 
         UrlChanged url ->
-            urlChaned (Debug.log "url ch" (toRoute url)) model
+            urlChaned (toRoute url) model
 
         CommonMsg commonMsg ->
-            (model, Common.update commonMsg model.key)
+            ( model, Common.update commonMsg model.key )
 
         LoginMsg loginMsg ->
             let
@@ -200,6 +200,7 @@ update msg model =
             ( { model | loginModel = newLoginModel }
             , cmd
             )
+
         RegisterMsg registerMsg ->
             let
                 ( newLoginModel, cmd ) =
@@ -213,6 +214,7 @@ update msg model =
             ( { model | registerModel = newLoginModel }
             , cmd
             )
+
         HomeMsg homeMsg ->
             ( { model | homeModel = Home.update homeMsg model.homeModel }
             , Cmd.none
@@ -249,14 +251,14 @@ update msg model =
             ( { model | budgetForm = newLoginModel }
             , cmd
             )
-        
+
         BudgetSettingsMsg budgetSettingsMsg ->
             let
                 args =
                     { token = modelToken
                     , tagger = BudgetSettingsMsg
                     , navKey = model.key
-                    , reloadCmd = (\id -> Cmd.map BudgetMsg <| Budget.fetchBudget modelToken id Budget.GotBudget)
+                    , reloadCmd = \id -> Cmd.map BudgetMsg <| Budget.fetchBudget modelToken id Budget.GotBudget
                     }
 
                 ( newLoginModel, cmd ) =
@@ -268,6 +270,7 @@ update msg model =
             ( { model | budgetSettings = newLoginModel }
             , cmd
             )
+
         BudgetLineMsg budgetLineMsg ->
             let
                 args =
@@ -334,18 +337,21 @@ view model =
 
         budgetsSidePanel =
             Common.viewSidePanel model.profile.data |> Html.map CommonMsg
-        (userList, budgetName) = 
+
+        ( userList, budgetName ) =
             case model.budgetModel.data of
                 Api.Success d ->
-                    (d.users, d.name)
+                    ( d.users, d.name )
+
                 _ ->
-                    ([], "")
-                    
+                    ( [], "" )
+
         content =
             case model.route of
                 Login ->
                     Login.view model.loginModel
                         |> Html.map LoginMsg
+
                 Register ->
                     Register.view model.registerModel
                         |> Html.map RegisterMsg
@@ -359,20 +365,20 @@ view model =
                 BudgetDetail id ->
                     div [ class "main-layout" ]
                         [ budgetsSidePanel
-                        , Budget.view model.budgetModel (BudgetFormMsg << BudgetForm.InitForm) (BudgetMsg << Budget.DeleteBudget) (BudgetSettingsMsg << BudgetSettings.SetBudget)  (\a b -> BudgetLineForm.InitLineForm a b |> BudgetLineFormMsg) (\a b -> BudgetLine.DeleteBudgetLine a b |> BudgetLineMsg)
+                        , Budget.view model.budgetModel (BudgetFormMsg << BudgetForm.InitForm) (BudgetMsg << Budget.DeleteBudget) (BudgetSettingsMsg << BudgetSettings.SetBudget) (\a b -> BudgetLineForm.InitLineForm a b |> BudgetLineFormMsg) (\a b -> BudgetLine.DeleteBudgetLine a b |> BudgetLineMsg)
                         , BudgetLineForm.viewForm model.budgetLineForm (Categories.getList model.categories) |> Html.map BudgetLineFormMsg
                         ]
 
                 BudgetSettings id ->
                     div [ class "main-layout" ]
                         [ budgetsSidePanel
-                        , BudgetSettings.view model.budgetSettings model.budgetModel.data  |> Html.map BudgetSettingsMsg
+                        , BudgetSettings.view model.budgetSettings model.budgetModel.data |> Html.map BudgetSettingsMsg
                         ]
 
                 BudgetStatistics id ->
                     div [ class "main-layout" ]
                         [ budgetsSidePanel
-                        , BudgetStatistics.view model.budgetModel.data (BudgetSettingsMsg << BudgetSettings.SetBudget) 
+                        , BudgetStatistics.view model.budgetModel.data (BudgetSettingsMsg << BudgetSettings.SetBudget)
                         ]
 
                 NewBudget ->

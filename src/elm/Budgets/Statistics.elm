@@ -81,7 +81,7 @@ viewCurve ( name, curve, color ) b =
                 [ Axis.bottom [ Axis.tickFormat (\a -> getLabel b a),Axis.tickCount yLabelTicks, Axis.tickSizeInner 12, Axis.tickSizeOuter 15 ] preparedXScale
                 ]
             , g []
-                [ List.map Just (Debug.log "prepared" scaledPoints)
+                [ List.map Just scaledPoints
                     |> Shape.line curve
                     |> (\path -> Path.element path [ stroke color, fill FillNone, strokeWidth 2 ])
                 ]
@@ -91,7 +91,7 @@ viewCurve ( name, curve, color ) b =
 
 preparedPoints : List ( Float, Float ) -> ContinuousScale Float -> ContinuousScale Float -> List ( Float, Float )
 preparedPoints list xScl yScl =
-    List.map (\( x, y ) -> ( Scale.convert xScl x, Scale.convert yScl y )) <| Debug.log "points" list
+    List.map (\( x, y ) -> ( Scale.convert xScl x, Scale.convert yScl y )) list
 
 
 getSum : Budget -> Int -> Float

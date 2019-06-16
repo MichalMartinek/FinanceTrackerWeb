@@ -3,7 +3,6 @@ module Budgets.Settings exposing (Model, Msg(..), deleteRole, filterUsers, init,
 import Api
 import Browser.Navigation as Nav
 import Budgets.Types exposing (BudgetWrapper)
-import Debug
 import Html exposing (Html, a, button, div, form, h1, h2, h3, input, label, p, span, text, textarea)
 import Html.Attributes exposing (class, disabled, href, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
@@ -86,7 +85,7 @@ update { token, tagger, navKey, reloadCmd } msg model =
                 )
 
         GotSearchResults result ->
-            case Debug.log "budget-posted" result of
+            case result of
                 Ok d ->
                     ( { model | searchResult = Api.Success d }, Cmd.none )
 
@@ -94,7 +93,7 @@ update { token, tagger, navKey, reloadCmd } msg model =
                     ( { model | searchResult = Api.Error err }, Cmd.none )
 
         PostedRole result ->
-            case Debug.log "budget-posted" result of
+            case result of
                 Ok d ->
                     ( init model.budgetId, reloadCmd <| Maybe.withDefault 0 model.budgetId )
 
@@ -102,7 +101,7 @@ update { token, tagger, navKey, reloadCmd } msg model =
                     ( { model | postRole = Api.Error err }, Cmd.none )
 
         DeletedRole result ->
-            case Debug.log "budget-posted" result of
+            case result of
                 Ok d ->
                     ( { model | deleteRole = Api.Success d }, reloadCmd <| Maybe.withDefault 0 model.budgetId )
 

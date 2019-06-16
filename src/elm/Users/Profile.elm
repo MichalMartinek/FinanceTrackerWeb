@@ -1,7 +1,6 @@
 module Users.Profile exposing (Model, Msg(..), fetchProfile, init, initLoading, update)
 
 import Api
-import Debug
 import Formatters
 import Html exposing (a, div, h1, h2, p, text)
 import Html.Attributes exposing (class, href)
@@ -44,7 +43,7 @@ update :
 update msg model =
     case msg of
         GotProfile result ->
-            case Debug.log "profile" result of
+            case result of
                 Ok profile ->
                     ( { model | data = Api.Success profile }, Cmd.none )
 
