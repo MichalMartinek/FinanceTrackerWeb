@@ -5,7 +5,7 @@ import Html exposing (Html, div, text)
 
 apiUrl : String
 apiUrl =
-    "http://localhost:8000"
+    "http://financeapi.mmlab.cz"
 
 
 type DataWrapper a
