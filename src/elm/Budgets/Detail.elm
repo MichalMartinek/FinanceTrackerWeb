@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import BudgetLines.Detail as BudgetLinesDetail exposing (viewBudgetsListItem)
 import BudgetLines.Types as BudgetLinesTypes exposing (BudgetLine)
 import Budgets.Json exposing (budgetDecoder)
-import Budgets.Types exposing (Budget)
+import Budgets.Types exposing (Budget, BudgetWrapper)
 import Debug
 import Formatters
 import Html exposing (a, button, div, h1, h2, p, text)
@@ -21,7 +21,7 @@ import Users.Types exposing (Role)
 
 
 type alias Model =
-    { data : Api.DataWrapper Budget
+    { data : BudgetWrapper
     , delete : Api.DataWrapper Bool
     }
 
@@ -135,6 +135,7 @@ view { data } editMsg deleteMsg settingsMsg editLineMsg deleteLineMsg =
             \budget ->
                 [ h2 [] [ text (Debug.log "Profile" budget).name ]
                 , button [ class "edit-button", onClick (editMsg budget) ] [ text "Editovat" ]
+                , a [href <| "/budget-statistics/" ++ (String.fromInt budget.id)] [text "Statistika"]
                 , button [ class "delete-button", onClick (deleteMsg budget.id) ] [ text "Smazat" ]
                 , button [ class "delete-button", onClick (settingsMsg budget.id) ] [ text "Settings" ]
                 , viewBudgetsLines budget.lines (editLineMsg budget.id) (deleteLineMsg budget.id)

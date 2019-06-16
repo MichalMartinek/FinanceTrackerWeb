@@ -7,6 +7,7 @@ import BudgetLines.Detail as BudgetLine
 import BudgetLines.Form as BudgetLineForm
 import Budgets.Form as BudgetForm
 import Budgets.Settings as BudgetSettings
+import Budgets.Statistics as BudgetStatistics
 import Categories.List as Categories
 import Common
 import Debug
@@ -75,6 +76,9 @@ init token url key =
                     Cmd.batch [ loadProfileCmd t, Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget ]
 
                 ( BudgetSettings id, Just t ) ->
+                    Cmd.batch [ loadProfileCmd t, Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget ]
+
+                ( BudgetStatistics id, Just t ) ->
                     Cmd.batch [ loadProfileCmd t, Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget ]
 
                 ( EditBudget id, Just t ) ->
@@ -361,6 +365,12 @@ view model =
                     div [ class "main-layout" ]
                         [ budgetsSidePanel
                         , BudgetSettings.view model.budgetSettings userList |> Html.map BudgetSettingsMsg
+                        ]
+
+                BudgetStatistics id ->
+                    div [ class "main-layout" ]
+                        [ budgetsSidePanel
+                        , BudgetStatistics.view model.budgetModel.data
                         ]
 
                 NewBudget ->

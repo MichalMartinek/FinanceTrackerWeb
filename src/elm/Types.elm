@@ -37,6 +37,7 @@ type Route
     = Home
     | BudgetDetail Int
     | BudgetSettings Int
+    | BudgetStatistics Int
     | EditBudget Int
     | NewBudget
     | Login

@@ -12,6 +12,7 @@ route =
         , map NewBudget (s "new-budget")
         , map BudgetDetail (s "budget" </> int)
         , map BudgetSettings (s "budget-settings" </> int)
+        , map BudgetStatistics (s "budget-statistics" </> int)
         , map EditBudget (s "budget-edit" </> int)
         ]
 

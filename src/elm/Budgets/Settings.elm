@@ -1,17 +1,17 @@
-module Budgets.Settings exposing (..)
+module Budgets.Settings exposing (Model, Msg(..), deleteRole, filterUsers, init, postRole, searchUsers, update, view, viewSearchResult, viewUser, viewUserWithRole)
 
 import Api
 import Browser.Navigation as Nav
-import Users.Types exposing (User, Role, UserWithRole)
-import Users.Json exposing (userDecoder, encodeRole, fromRole)
 import Debug
-import Html exposing (Html, a, button, div, form, h1, h2, input, label, span, text, textarea, p)
-import Html.Attributes exposing (href, disabled, type_, value)
+import Html exposing (Html, a, button, div, form, h1, h2, input, label, p, span, text, textarea)
+import Html.Attributes exposing (disabled, href, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Http
-import Url
 import Json.Decode as D
 import List.Extra
+import Url
+import Users.Json exposing (encodeRole, fromRole, userDecoder)
+import Users.Types exposing (Role, User, UserWithRole)
 
 
 type alias Model =
@@ -22,8 +22,6 @@ type alias Model =
     , selected : Maybe User
     , budgetId : Maybe Int
     }
-
-
 
 
 type Msg
@@ -75,7 +73,7 @@ update { token, tagger, navKey, reloadCmd } msg model =
             ( { model | deleteRole = Api.Loading }, deleteRole token s (tagger << DeletedRole) )
 
         SetBudget s ->
-            ( { model | budgetId = Just s }, Nav.pushUrl navKey <| "/budget-settings/" ++ (String.fromInt s) )
+            ( { model | budgetId = Just s }, Nav.pushUrl navKey <| "/budget-settings/" ++ String.fromInt s )
 
         Submit ->
             if String.isEmpty model.searchInput then
@@ -111,6 +109,7 @@ update { token, tagger, navKey, reloadCmd } msg model =
                     ( { model | deleteRole = Api.Error err }, Cmd.none )
 
 
+
 -- HTTP
 
 
@@ -120,7 +119,9 @@ searchUsers token model msg =
         headers =
             [ Http.header "Authorization" ("token " ++ token)
             ]
-        searchTerm = Url.percentEncode model.searchInput
+
+        searchTerm =
+            Url.percentEncode model.searchInput
     in
     Http.request
         { method = "GET"
@@ -132,10 +133,11 @@ searchUsers token model msg =
         , tracker = Nothing
         }
 
+
 postRole : String -> Model -> Role -> (Result Http.Error () -> msg) -> Cmd msg
 postRole token model role msg =
-    case (model.budgetId, model.selected) of
-        (Just budgetId, Just usr) ->
+    case ( model.budgetId, model.selected ) of
+        ( Just budgetId, Just usr ) ->
             let
                 headers =
                     [ Http.header "Authorization" ("token " ++ token)
@@ -150,9 +152,9 @@ postRole token model role msg =
                 , timeout = Nothing
                 , tracker = Nothing
                 }
+
         _ ->
-            
-         Cmd.none 
+            Cmd.none
 
 
 deleteRole : String -> Int -> (Result Http.Error () -> msg) -> Cmd msg
@@ -173,32 +175,38 @@ deleteRole token id msg =
         }
 
 
+
 -- Views
 
+
 viewUser : User -> Html Msg
-viewUser usr = 
-    div [onClick <| UserSelected usr] [
-        h2 [] [text usr.username]
-    ]
-    
+viewUser usr =
+    div [ onClick <| UserSelected usr ]
+        [ h2 [] [ text usr.username ]
+        ]
+
+
 viewSearchResult : List User -> Html Msg
 viewSearchResult list =
     if List.length list == 0 then
-        div [] [text "No search result"]
+        div [] [ text "No search result" ]
+
     else
         div [] <| List.map viewUser list
 
+
 viewUserWithRole : UserWithRole -> Html Msg
-viewUserWithRole usr = 
-    div [] [
-        h2 [] [text usr.user.username]
-        , p [] [text <| fromRole usr.rel]
-        , button [onClick <| DeleteRole usr.id] [text "Delete"]
-    ]
+viewUserWithRole usr =
+    div []
+        [ h2 [] [ text usr.user.username ]
+        , p [] [ text <| fromRole usr.rel ]
+        , button [ onClick <| DeleteRole usr.id ] [ text "Delete" ]
+        ]
+
 
 filterUsers : List User -> List UserWithRole -> List User
 filterUsers result assigned =
-    List.filter (\ a -> Maybe.withDefault True <| Maybe.map (\_ -> False) <| List.Extra.find (\b -> a.id == b.user.id) assigned) result
+    List.filter (\a -> Maybe.withDefault True <| Maybe.map (\_ -> False) <| List.Extra.find (\b -> a.id == b.user.id) assigned) result
 
 
 view : Model -> List UserWithRole -> Html Msg
@@ -207,35 +215,41 @@ view model list =
         searchResult =
             case model.searchResult of
                 Api.Success l ->
-                    viewSearchResult <| filterUsers l list 
-            
+                    viewSearchResult <| filterUsers l list
+
                 _ ->
-                    div [] []  
-        addForm = 
+                    div [] []
+
+        addForm =
             case model.selected of
                 Just usr ->
-                    [
-                        h2 [] [text <| "Selected: " ++ usr.username]
-                        ,button [onClick <| RoleChanged Users.Types.Admin] [text "Set as admin"] 
-                        ,button [onClick <| RoleChanged Users.Types.Viewer] [text "Set as viewer"] 
+                    [ h2 [] [ text <| "Selected: " ++ usr.username ]
+                    , button [ onClick <| RoleChanged Users.Types.Admin ] [ text "Set as admin" ]
+                    , button [ onClick <| RoleChanged Users.Types.Viewer ] [ text "Set as viewer" ]
                     ]
+
                 _ ->
                     []
+
         userList =
-                div [] [
-                    h2 [] [text "Assigned users: "]
-                    , div [] <| List.map viewUserWithRole list
+            div []
+                [ h2 [] [ text "Assigned users: " ]
+                , div [] <| List.map viewUserWithRole list
                 ]
     in
-    
     case model.budgetId of
         Nothing ->
             div [] []
+
         Just id ->
             div []
-                [ div [] [ a [href <| "/budget/" ++ (String.fromInt id)] [text "Detail"]]
+                [ div []
+                    [ a [ href <| "/budget/" ++ String.fromInt id ] [ text "Detail" ]
+                    , a [ href "#" ] [ text "Settings" ]
+                    , a [ href <| "/budget-statistics/" ++ String.fromInt id ] [ text "Statistics" ]
+                    ]
                 , userList
-                , h1 [] [text "Add new user"]
+                , h1 [] [ text "Add new user" ]
                 , form [ onSubmit Submit ]
                     [ div []
                         [ label [] [ text "Search user" ]
@@ -243,7 +257,6 @@ view model list =
                         ]
                     , button [ type_ "submit" ] [ text "Search" ]
                     ]
-                , div [] [searchResult]
+                , div [] [ searchResult ]
                 , div [] addForm
                 ]
-
