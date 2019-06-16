@@ -8,8 +8,8 @@ import Budgets.Json exposing (budgetDecoder)
 import Budgets.Types exposing (Budget, BudgetWrapper)
 import Debug
 import Formatters
-import Html exposing (a, button, div, h1, h2, p, text)
-import Html.Attributes exposing (class, href)
+import Html exposing (Html, a, button, div, h1, h2, p, text)
+import Html.Attributes exposing (class, disabled, href)
 import Html.Events exposing (onClick)
 import Http
 import Time
@@ -122,21 +122,30 @@ deleteBudget token id msg =
 -- Views
 
 
-viewBudgetsLines : List BudgetLine -> (BudgetLine -> msg) -> (Int -> msg) -> Html.Html msg
-viewBudgetsLines budgets onEdit onDelete =
+viewBudgetsLines : String -> List BudgetLine -> (BudgetLine -> msg) -> (Int -> msg) -> Html msg
+viewBudgetsLines currency budgets onEdit onDelete =
     div [] <|
-        List.map3 viewBudgetsListItem (List.sortWith (\a b -> compare (Time.toMillis Time.utc a.date_created) (Time.toMillis Time.utc b.date_created)) budgets) (List.repeat (List.length budgets) onEdit) (List.repeat (List.length budgets) onDelete)
+        List.map4 viewBudgetsListItem (List.repeat (List.length budgets) currency) (List.sortWith (\a b -> compare (Time.toMillis Time.utc a.date_created) (Time.toMillis Time.utc b.date_created)) budgets) (List.repeat (List.length budgets) onEdit) (List.repeat (List.length budgets) onDelete)
 
 
-view : Model -> (Budget -> msg) -> (Int -> msg) -> (Int -> msg) -> (Int -> BudgetLine -> msg) -> (Int -> Int -> msg) -> Html.Html msg
+viewRibbon : Int -> msg -> Html msg
+viewRibbon id settingsMsg =
+    div [ class "budget-ribbon" ]
+        [ button [ disabled True, class "btn" ] [ text "Detail" ]
+        , a [ class "btn", href <| "/budget-statistics/" ++ String.fromInt id ] [ text "Statistics" ]
+        , button [ class "btn", onClick settingsMsg ] [ text "Settings" ]
+        ]
+
+
+view : Model -> (Budget -> msg) -> (Int -> msg) -> (Int -> msg) -> (Int -> BudgetLine -> msg) -> (Int -> Int -> msg) -> Html msg
 view { data } editMsg deleteMsg settingsMsg editLineMsg deleteLineMsg =
-    div [] <|
+    div [ class "main-layout__inner" ] <|
         Api.defaultDataWrapperView data <|
             \budget ->
                 [ h2 [] [ text (Debug.log "Profile" budget).name ]
-                , button [ class "edit-button", onClick (editMsg budget) ] [ text "Editovat" ]
-                , a [href <| "/budget-statistics/" ++ (String.fromInt budget.id)] [text "Statistika"]
-                , button [ class "delete-button", onClick (deleteMsg budget.id) ] [ text "Smazat" ]
-                , button [ class "delete-button", onClick (settingsMsg budget.id) ] [ text "Settings" ]
-                , viewBudgetsLines budget.lines (editLineMsg budget.id) (deleteLineMsg budget.id)
+                , viewRibbon budget.id (settingsMsg budget.id)
+                , button [ class "btn", onClick (editMsg budget) ] [ text "Edit" ]
+                , button [ class "btn", onClick (deleteMsg budget.id) ] [ text "Delete" ]
+                , h2 [] [ text "Budget items" ]
+                , viewBudgetsLines budget.currency budget.lines (editLineMsg budget.id) (deleteLineMsg budget.id)
                 ]

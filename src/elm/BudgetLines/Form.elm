@@ -6,8 +6,8 @@ import Budgets.Types exposing (Budget)
 import BudgetLines.Types exposing (..)
 import BudgetLines.Json exposing (..)
 import Debug
-import Html exposing (Html, a, button, div, form, h1, h2, input, label, span, text, textarea, select, option)
-import Html.Attributes exposing (disabled, type_, value)
+import Html exposing (Html, a, button, div, form, h2, input, label, span, text, textarea, select, option)
+import Html.Attributes exposing (disabled, type_, value, class)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Http
 import String.Extra
@@ -196,30 +196,30 @@ viewForm model categoriesList =
         title =
             case model.formType of
                 NewBudgetLine _ ->
-                    "Add new"
+                    "Add New"
 
                 EditBudgetLine _ _ ->
                     "Edit"
                 NoneSelected ->
                     ""
     in
-    div []
-        [ h1 [] [ text title ]
+    div [class "budget-form"]
+        [ h2 [] [ text title ]
         , form [ onSubmit Submit ]
-            [ div []
+            [ div [class "form-row"]
                 [ label [] [ text "Description" ]
                 , input [ type_ "text", value model.form.description, onInput (\a -> DescriptionChanged a) ] []
                 ]
-            , div []
-                [ label [] [ text "Budget Amount" ]
+            , div [class "form-row"]
+                [ label [] [ text "Amount" ]
                 , input [ type_ "number", value (String.fromFloat model.form.amount), onInput (\a -> AmountChanged a) ] []
                 ]
-            , div []
+            , div [class "form-row"]
                 [ label [] [ text "Category" ]
                 , select [ value model.form.category, onInput (\a -> CategoryChanged a) ] <| List.map viewCategoryItem categoriesList
                 ]
-            , button [ type_ "submit" ] [ text "Save" ]
-            , button [ onClick ClearForm ] [ text "Cancel and create new" ]
+            , button [ class "btn", type_ "submit" ] [ text "Save" ]
+            , button [ class "btn", onClick ClearForm ] [ text "Cancel" ]
             ]
         ]
 

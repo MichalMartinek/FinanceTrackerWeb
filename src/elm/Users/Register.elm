@@ -6,12 +6,12 @@ module Users.Register exposing
     , view
     )
 
+import Api
 import Html exposing (Html, button, div, form, input, label, text)
 import Html.Attributes exposing (class, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Http
-import Api
-import Users.Json exposing(encodeRegisterForm)
+import Users.Json exposing (encodeRegisterForm)
 
 
 type Msg
@@ -78,7 +78,8 @@ update { tagger, afterRegisterCmd } msg model =
                     ( init, afterRegisterCmd )
 
                 Err e ->
-                    ( { model | error = Just <| Api.errorLabel e}, Cmd.none )
+                    ( { model | error = Just <| Api.errorLabel e }, Cmd.none )
+
 
 
 -- HTTP
@@ -97,27 +98,34 @@ postUser model msg =
         }
 
 
+
 -- Views
+
 
 view : Model -> Html Msg
 view model =
     let
         error =
             case model.error of
-                Just errorText->
-                    div [ class "login-error" ][ text errorText ]
-            
+                Just errorText ->
+                    div [ class "login-error" ] [ text errorText ]
+
                 option2 ->
                     div [] []
-                    
     in
     form [ onSubmit Submit, class "page Login" ]
         [ error
-        , label [] [ text "Username" ]
-        , input [ type_ "text", value model.username, onInput UsernameChanged ] []
-        , label [] [ text "Email" ]
-        , input [ type_ "email", value model.email, onInput EmailChanged ] []
-        , label [] [ text "Password" ]
-        , input [ type_ "password", value model.password, onInput PasswordChanged ] []
-        , button [ type_ "submit" ] [ text "Log In" ]
+        , div [ class "form-row" ]
+            [ label [] [ text "Username" ]
+            , input [ type_ "text", value model.username, onInput UsernameChanged ] []
+            ]
+        , div [ class "form-row form-row--email" ]
+            [ label [] [ text "Email" ]
+            , input [ type_ "email", value model.email, onInput EmailChanged ] []
+            ]
+        , div [ class "form-row" ]
+            [ label [] [ text "Password" ]
+            , input [ type_ "password", value model.password, onInput PasswordChanged ] []
+            ]
+        , button [ type_ "submit", class "btn" ] [ text "Create" ]
         ]

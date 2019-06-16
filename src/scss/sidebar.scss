@@ -1,0 +1,54 @@
+
+
+.sidepanel {
+    width: 30%;
+    height: calc(100vh - 3rem);
+    background: $sidebar;
+    border-right: 1px solid $sidebar-line;
+    overflow: auto;
+
+    & h2 {
+        margin: 0.5rem;
+    }
+
+
+    & .budgets-list {
+        list-style: none;
+        padding: 0;
+    }
+    & .budgets-item {
+        padding: 0;
+        border-bottom: 1px solid $sidebar-line;
+        transition: 0.1s ease-in all;
+
+        &:first-child {
+            border-top: 1px solid $sidebar-line;
+        }
+
+        &:hover {
+            background: mediumaquamarine;
+        }
+
+        &__btn {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        &__time {
+            margin: 0.2rem 0;
+        }
+        &__title {
+            font-size: 1.3rem;
+            & i {
+                margin-left: 0.5rem;
+                font-size: 1rem;
+                color: $blue-dark;
+            }
+        }
+
+    }
+}

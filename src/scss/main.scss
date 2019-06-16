@@ -1,47 +1,13 @@
-body {
-    background: #eef;
-    text-align: center;
+@import url('https://fonts.googleapis.com/css?family=Open+Sans:400,500,600,700|Rubik:400,500&display=swap&subset=latin-ext');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.css');
+@import 'variables';
+@import 'common';
+@import 'navigation';
+@import 'sidebar';
+@import 'budgets';
 
-    img {
-        width: 300px;
-    }
-}
-.main-layout {
-    display: flex;
-}
 
-.sidepanel {
-    width: 30%;
-    background: mintcream;
-}
 
-.budgets-list {
-    list-style: none;
-    padding: 0;
-}
-.budgets-item {
-    padding: 0.5rem;
-    cursor: pointer;
-    border-bottom: 1px solid midnightblue;
-    transition: 0.1s ease-in all;
-
-    &:first-child {
-        border-top: 1px solid midnightblue;
-    }
-
-    &:hover {
-        background: mediumaquamarine;
-    }
-
-    &__title {
-        font-size: 1.3rem;
-    }
-
-    & a {
-        text-decoration: none;
-        color: midnightblue;
-    }
-}
 .full-width {
 
     width: 100%;

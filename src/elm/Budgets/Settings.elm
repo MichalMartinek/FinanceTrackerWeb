@@ -2,9 +2,10 @@ module Budgets.Settings exposing (Model, Msg(..), deleteRole, filterUsers, init,
 
 import Api
 import Browser.Navigation as Nav
+import Budgets.Types exposing (BudgetWrapper)
 import Debug
-import Html exposing (Html, a, button, div, form, h1, h2, input, label, p, span, text, textarea)
-import Html.Attributes exposing (disabled, href, type_, value)
+import Html exposing (Html, a, button, div, form, h1, h2, h3, input, label, p, span, text, textarea)
+import Html.Attributes exposing (class, disabled, href, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Http
 import Json.Decode as D
@@ -95,7 +96,7 @@ update { token, tagger, navKey, reloadCmd } msg model =
         PostedRole result ->
             case Debug.log "budget-posted" result of
                 Ok d ->
-                    ( { model | postRole = Api.Success d }, reloadCmd <| Maybe.withDefault 0 model.budgetId )
+                    ( init model.budgetId, reloadCmd <| Maybe.withDefault 0 model.budgetId )
 
                 Err err ->
                     ( { model | postRole = Api.Error err }, Cmd.none )
@@ -181,7 +182,7 @@ deleteRole token id msg =
 
 viewUser : User -> Html Msg
 viewUser usr =
-    div [ onClick <| UserSelected usr ]
+    div [ onClick <| UserSelected usr, class "user-item" ]
         [ h2 [] [ text usr.username ]
         ]
 
@@ -189,10 +190,10 @@ viewUser usr =
 viewSearchResult : List User -> Html Msg
 viewSearchResult list =
     if List.length list == 0 then
-        div [] [ text "No search result" ]
+        div [] [ text "No one found" ]
 
     else
-        div [] <| List.map viewUser list
+        div [] <| h3 [] [text "Select"] :: List.map viewUser list
 
 
 viewUserWithRole : UserWithRole -> Html Msg
@@ -200,7 +201,7 @@ viewUserWithRole usr =
     div []
         [ h2 [] [ text usr.user.username ]
         , p [] [ text <| fromRole usr.rel ]
-        , button [ onClick <| DeleteRole usr.id ] [ text "Delete" ]
+        , button [ onClick <| DeleteRole usr.id, class "btn" ] [ text "Delete" ]
         ]
 
 
@@ -209,54 +210,60 @@ filterUsers result assigned =
     List.filter (\a -> Maybe.withDefault True <| Maybe.map (\_ -> False) <| List.Extra.find (\b -> a.id == b.user.id) assigned) result
 
 
-view : Model -> List UserWithRole -> Html Msg
-view model list =
-    let
-        searchResult =
-            case model.searchResult of
-                Api.Success l ->
-                    viewSearchResult <| filterUsers l list
+viewRibbon : Int -> Html msg
+viewRibbon id =
+    div [ class "budget-ribbon" ]
+        [ a [ class "btn", href <| "/budget/" ++ String.fromInt id ] [ text "Detail" ]
+        , a [ class "btn", href <| "/budget-statistics/" ++ String.fromInt id ] [ text "Statistics" ]
+        , button [ disabled True, class "btn" ] [ text "Settings" ]
+        ]
 
-                _ ->
-                    div [] []
 
-        addForm =
-            case model.selected of
-                Just usr ->
-                    [ h2 [] [ text <| "Selected: " ++ usr.username ]
-                    , button [ onClick <| RoleChanged Users.Types.Admin ] [ text "Set as admin" ]
-                    , button [ onClick <| RoleChanged Users.Types.Viewer ] [ text "Set as viewer" ]
-                    ]
+view : Model -> BudgetWrapper -> Html Msg
+view model budgetData =
+    case budgetData of
+        Api.Success budget ->
+            let
+                searchResult =
+                    case model.searchResult of
+                        Api.Success l ->
+                            viewSearchResult <| filterUsers l budget.users
 
-                _ ->
-                    []
+                        _ ->
+                            div [] []
 
-        userList =
-            div []
-                [ h2 [] [ text "Assigned users: " ]
-                , div [] <| List.map viewUserWithRole list
-                ]
-    in
-    case model.budgetId of
-        Nothing ->
-            div [] []
+                addForm =
+                    case model.selected of
+                        Just usr ->
+                            [ h2 [] [ text <| "Selected: " ++ usr.username ]
+                            , button [ onClick <| RoleChanged Users.Types.Admin, class "btn" ] [ text "Set as admin" ]
+                            , button [ onClick <| RoleChanged Users.Types.Viewer, class "btn" ] [ text "Set as viewer" ]
+                            ]
 
-        Just id ->
-            div []
-                [ div []
-                    [ a [ href <| "/budget/" ++ String.fromInt id ] [ text "Detail" ]
-                    , a [ href "#" ] [ text "Settings" ]
-                    , a [ href <| "/budget-statistics/" ++ String.fromInt id ] [ text "Statistics" ]
-                    ]
+                        _ ->
+                            []
+
+                userList =
+                    div []
+                        [ h2 [] [ text "Assigned users: " ]
+                        , div [ class "userlist" ] <| List.map viewUserWithRole budget.users
+                        ]
+            in
+            div [ class "main-layout__inner" ]
+                [ h2 [] [ text budget.name ]
+                , viewRibbon budget.id
                 , userList
-                , h1 [] [ text "Add new user" ]
+                , h2 [] [ text "Add new user" ]
                 , form [ onSubmit Submit ]
-                    [ div []
+                    [ div [ class "form-row" ]
                         [ label [] [ text "Search user" ]
                         , input [ type_ "text", value model.searchInput, onInput SearchChanged ] []
+                        , button [ type_ "submit", class "btn" ] [ text "Search" ]
                         ]
-                    , button [ type_ "submit" ] [ text "Search" ]
                     ]
                 , div [] [ searchResult ]
                 , div [] addForm
                 ]
+
+        _ ->
+            div [] []

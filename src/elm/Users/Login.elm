@@ -6,12 +6,12 @@ module Users.Login exposing
     , view
     )
 
+import Api
 import Html exposing (Html, button, div, form, input, label, text)
 import Html.Attributes exposing (class, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Http
-import Api
-import Users.Json exposing (encodeLoginForm, decodeToken)
+import Users.Json exposing (decodeToken, encodeLoginForm)
 
 
 type Msg
@@ -67,10 +67,12 @@ update { tagger, loginCmd } msg model =
         GotToken result ->
             case result of
                 Ok token ->
-                    ( model, loginCmd token )
+                    ( init, loginCmd token )
 
                 Err _ ->
                     ( { model | failed = True }, Cmd.none )
+
+
 
 -- HTTP
 
@@ -88,7 +90,9 @@ fetchToken model msg =
         }
 
 
+
 -- Views
+
 
 view : Model -> Html Msg
 view model =
@@ -103,9 +107,13 @@ view model =
     in
     form [ onSubmit Submit, class "page Login" ]
         [ error
-        , label [] [ text "Username" ]
-        , input [ type_ "text", value model.username, onInput UsernameChanged ] []
-        , label [] [ text "Password" ]
-        , input [ type_ "password", value model.password, onInput PasswordChanged ] []
-        , button [ type_ "submit" ] [ text "Log In" ]
+        , div [class "form-row"]
+            [ label [] [ text "Username" ]
+            , input [ type_ "text", value model.username, onInput UsernameChanged ] []
+            ]
+        , div [class "form-row"]
+            [ label [] [ text "Password" ]
+            , input [ type_ "password", value model.password, onInput PasswordChanged ] []
+            ]
+        , button [ type_ "submit", class "btn" ] [ text "Log In" ]
         ]

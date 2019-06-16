@@ -1,0 +1,55 @@
+.budget-form {
+    width: 300px;
+    padding: 0.5rem;
+    height: calc(100vh - 3rem);
+    background: $sidebar;
+    border-left: 1px solid $sidebar-line;
+    overflow: auto;
+    & .form-row {
+        display: flex;
+        justify-content: space-between
+    }
+    & select {
+        width: 179px;
+    }
+}
+
+.budget-ribbon {
+    display: flex;
+    width: 80%;
+    margin: 0 auto 1rem;
+    & > * {
+        flex: 1;
+    }
+}
+.line-detail {
+    display: flex;
+    margin: 1rem 2rem;
+    justify-content: space-between;
+    align-items: center;
+
+    & * {
+        flex: 1;
+    }
+    &__title {
+        font-weight: 600;
+        color: $grey-dark;
+        font-size: 1.1rem;
+    }
+    & .btn {
+        flex: 0;
+    }
+}
+.userlist {
+    max-width: 450px;
+    margin:0 auto;
+    & > * {
+        display: flex;
+        margin: 1rem 2rem;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+.user-item {
+    cursor: pointer;
+}

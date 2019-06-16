@@ -1,0 +1,30 @@
+
+.navigation {
+    border-bottom: 1px solid $blue-dark;
+
+    &__inner {
+        height: 3rem;
+        display: flex;
+        margin: 0 1rem;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    &__name {
+        text-decoration: none;  
+        font-family: 'Rubik', sans-serif;
+        font-size: 2rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        color: $blue;
+    }
+}
+.login-menu {
+    & a {
+        display: inline-block;
+        margin: 1rem;
+        font-weight: 500;
+        font-size: 1.1rem;
+        
+    }
+}

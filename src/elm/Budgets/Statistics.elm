@@ -6,7 +6,7 @@ import Axis
 import Budgets.Types exposing (Budget, BudgetWrapper)
 import Color exposing (Color)
 import Html exposing (Html, a, button, div, h1, h2, p, text)
-import Html.Attributes exposing (class, href)
+import Html.Attributes exposing (class, href, disabled)
 import Html.Events exposing (onClick)
 import List.Extra
 import Formatters
@@ -214,15 +214,23 @@ getCategoriesCount b =
     List.map (\a -> ( a ++ " " ++ (String.fromFloat <| countCategoriesItem a b), countCategoriesItem a b )) categories
 
 
-view : BudgetWrapper -> Html msg
-view budget =
+
+viewRibbon : Int -> msg -> Html msg
+viewRibbon id settingsMsg =
+    div [ class "budget-ribbon" ]
+        [ a [ class "btn", href <| "/budget/" ++ String.fromInt id ] [ text "Detail" ]
+        , button [ disabled True, class "btn" ] [ text "Statistics" ]
+        , button [ class "btn", onClick settingsMsg ] [ text "Settings" ]
+        ]
+
+
+view : BudgetWrapper -> (Int -> msg) -> Html msg
+view budget settingsMsg =
     case budget of
         Api.Success b ->
-            div [ class "full-width" ]
-                [ h1 [] [ text "Statistics" ]
-                , a [ href <| "/budget/" ++ String.fromInt b.id ] [ text "Detail" ]
-                , a [ href <| "/budget-settings/" ++ String.fromInt b.id ] [ text "Settings" ]
-                , a [ href "#" ] [ text "Statistic" ]
+            div [ class "main-layout__inner" ]
+                [ h2 [] [ text b.name ]
+                , viewRibbon b.id (settingsMsg b.id)
                 , div [ class "full-width" ] [ viewCurve ( "Linear", Shape.linearCurve, Color.black ) b ]
                 , div [ class "full-width" ] [ viewPie <| getCategoriesCount b ]
                 ]

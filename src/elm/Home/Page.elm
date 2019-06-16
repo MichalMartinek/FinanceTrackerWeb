@@ -6,8 +6,8 @@ module Home.Page exposing
     , view
     )
 
-import Html exposing (Html, div, text)
-import Html.Attributes exposing (class)
+import Html exposing (Html, div, text, h2, a, p)
+import Html.Attributes exposing (class, href)
 
 
 type Msg
@@ -30,5 +30,11 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "page" ]
-        [ text "Home" ]
+    div [ class "main-layout__inner" ]
+        [ 
+            h2 [] [text "Home"]
+            , div [] [
+                p [] [text "Select one from existing budgets or"]
+                , a [ href "/new-budget", class "btn" ] [ text "Create new" ] 
+            ]
+         ]

@@ -140,6 +140,8 @@ urlChaned route model =
             in
             ( { newModel | budgetModel = newBudgetModel, budgetLineForm = newBudgetLineForm }, Cmd.map BudgetMsg nCmd )
 
+        ( NewBudget, _ ) ->
+            ( {newModel | budgetForm = BudgetForm.init}, Cmd.none )
         ( _, _ ) ->
             ( newModel, Cmd.none )
 
@@ -332,12 +334,12 @@ view model =
 
         budgetsSidePanel =
             Common.viewSidePanel model.profile.data |> Html.map CommonMsg
-        userList = 
+        (userList, budgetName) = 
             case model.budgetModel.data of
                 Api.Success d ->
-                    d.users
+                    (d.users, d.name)
                 _ ->
-                    []
+                    ([], "")
                     
         content =
             case model.route of
@@ -364,13 +366,13 @@ view model =
                 BudgetSettings id ->
                     div [ class "main-layout" ]
                         [ budgetsSidePanel
-                        , BudgetSettings.view model.budgetSettings userList |> Html.map BudgetSettingsMsg
+                        , BudgetSettings.view model.budgetSettings model.budgetModel.data  |> Html.map BudgetSettingsMsg
                         ]
 
                 BudgetStatistics id ->
                     div [ class "main-layout" ]
                         [ budgetsSidePanel
-                        , BudgetStatistics.view model.budgetModel.data
+                        , BudgetStatistics.view model.budgetModel.data (BudgetSettingsMsg << BudgetSettings.SetBudget) 
                         ]
 
                 NewBudget ->

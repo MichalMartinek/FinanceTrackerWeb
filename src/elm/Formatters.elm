@@ -42,6 +42,9 @@ toCzechMonth month =
         Dec ->
             12
 
+padMinutes : String -> String
+padMinutes a =
+    String.padLeft 2 '0' a
 
 toUtcString : Time.Posix -> String
 toUtcString time =
@@ -56,6 +59,4 @@ toUtcString time =
         ++ " "
         ++ String.fromInt (toHour zone time)
         ++ ":"
-        ++ String.fromInt (toMinute zone time)
-        ++ ":"
-        ++ String.fromInt (toSecond zone time)
+        ++ (padMinutes <| String.fromInt <| toMinute zone time)

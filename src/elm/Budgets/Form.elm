@@ -6,7 +6,7 @@ import Budgets.Types exposing (Budget)
 import Budgets.Json exposing (budgetDecoder)
 import Debug
 import Html exposing (Html, a, button, div, form, h1, h2, input, label, span, text, textarea)
-import Html.Attributes exposing (disabled, type_, value)
+import Html.Attributes exposing (class, disabled, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Http
 import Json.Encode as E
@@ -107,23 +107,23 @@ viewForm model =
     let 
         title = case model.formType of
                 NewBudget ->
-                    "Add new"
+                    "Add new budget "
 
                 EditBudget _ ->
-                    "Edit"
+                    "Edit budget"
     in
-    div []
-        [ h1 [] [text title]
+    div [class "main-layout__inner"]
+        [ h2 [] [text title]
         , form [ onSubmit Submit ]
-            [ div []
+            [ div [class "form-row"]
                 [ label [] [ text "Budget Name" ]
                 , input [ type_ "text", value model.name, onInput (\a -> NameChanged a) ] []
                 ]
-            , div []
+            , div [class "form-row"]
                 [ label [] [ text "Budget Currency" ]
                 , input [ type_ "text", value model.currency, onInput (\a -> CurrencyChanged a) ] []
                 ]
-            , button [ type_ "submit" ] [ text "Save" ]
+            , button [ type_ "submit", class "btn" ] [ text "Save" ]
             ]
         ]
 
