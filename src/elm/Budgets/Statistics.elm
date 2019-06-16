@@ -4,6 +4,7 @@ import Api
 import Array exposing (Array)
 import Axis
 import Budgets.Types exposing (Budget, BudgetWrapper)
+import BudgetLines.Types exposing (BudgetLine)
 import Color exposing (Color)
 import Html exposing (Html, a, button, div, h1, h2, p, text)
 import Html.Attributes exposing (class, href, disabled)
@@ -195,23 +196,23 @@ data =
     ]
 
 
-getCategories : Budget -> List String
-getCategories b =
-    List.Extra.unique <| List.map (\a -> a.category.code) b.lines
+getCategories : Budget -> (BudgetLine -> Bool) -> List String
+getCategories b typeFilter =
+    List.Extra.unique <| List.map (\a -> a.category.code) <| List.filter typeFilter b.lines
 
 
-countCategoriesItem : String -> Budget -> Float
-countCategoriesItem cat b =
-    List.sum <| List.map .amount <| List.filter (\a -> a.category.code == cat) b.lines
+countCategoriesItem : String -> Budget -> (BudgetLine -> Bool) -> Float
+countCategoriesItem cat b typeFilter =
+    List.sum <| List.map .amount <| List.filter (\a -> a.category.code == cat) <| List.filter typeFilter b.lines
 
 
-getCategoriesCount : Budget -> List ( String, Float )
-getCategoriesCount b =
+getCategoriesCount : Budget -> (BudgetLine -> Bool) -> List ( String, Float )
+getCategoriesCount b typeFilter =
     let
         categories =
-            getCategories b
+            getCategories b typeFilter
     in
-    List.map (\a -> ( a ++ " " ++ (String.fromFloat <| countCategoriesItem a b), countCategoriesItem a b )) categories
+    List.map (\a -> ( a ++ " " ++ (String.fromFloat <| countCategoriesItem a b typeFilter), countCategoriesItem a b typeFilter)) categories
 
 
 
@@ -223,6 +224,38 @@ viewRibbon id settingsMsg =
         , button [ class "btn", onClick settingsMsg ] [ text "Settings" ]
         ]
 
+viewCurveDiagram : Budget -> Html msg
+viewCurveDiagram budget =
+    let
+      content = if (List.length budget.lines) > 1 then
+            viewCurve ( "Linear", Shape.linearCurve, Color.black ) budget
+        else
+            div [] [text "Add more budget lines"]
+    in
+        div [] [h2 [] [text "Finance movement"], content]
+
+viewIncomeCategories : Budget -> Html msg
+viewIncomeCategories budget =
+    let
+      list = getCategoriesCount budget (\b -> b.amount > 0)
+      content = if (List.length list) > 0 then
+            viewPie list
+        else
+            div [] [text "Add more budget lines"]
+    in
+        div [] [h2 [] [text "Income categories"], content]
+
+viewExpenseCategories : Budget -> Html msg
+viewExpenseCategories budget =
+    let
+      list = List.map (\(a, b) -> (a, b * -1)) <| getCategoriesCount budget (\b -> b.amount < 0)
+      content = if (List.length list) > 0 then
+            viewPie list
+        else
+            div [] [text "Add more budget lines"]
+    in
+        div [] [h2 [] [text "Expense categories"], content]
+
 
 view : BudgetWrapper -> (Int -> msg) -> Html msg
 view budget settingsMsg =
@@ -231,8 +264,9 @@ view budget settingsMsg =
             div [ class "main-layout__inner" ]
                 [ h2 [] [ text b.name ]
                 , viewRibbon b.id (settingsMsg b.id)
-                , div [ class "full-width" ] [ viewCurve ( "Linear", Shape.linearCurve, Color.black ) b ]
-                , div [ class "full-width" ] [ viewPie <| getCategoriesCount b ]
+                , div [ class "full-width" ] [ viewCurveDiagram b ]
+                , div [ class "full-width" ] [ viewIncomeCategories b ]
+                , div [ class "full-width" ] [ viewExpenseCategories b ]
                 ]
 
         _ ->

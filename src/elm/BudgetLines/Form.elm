@@ -53,7 +53,7 @@ initForm : BudgetLineForm
 initForm =
     { description = ""
         , amount = 0.0
-        , category = ""
+        , category = "NOT_SET"
         }
 
 init : FormType -> Model
