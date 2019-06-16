@@ -1,21 +1,123 @@
-module Budgets.Statistics exposing (..)
+module Budgets.Statistics exposing (view)
 
+import Api
+import Array exposing (Array)
+import Axis
 import Budgets.Types exposing (Budget, BudgetWrapper)
+import Color exposing (Color)
 import Html exposing (Html, a, button, div, h1, h2, p, text)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
-import Api
 import List.Extra
-
-import Array exposing (Array)
-import Color exposing (Color)
-import Path
+import Formatters
+import Time
+import Path exposing (Path)
+import Scale exposing (ContinuousScale)
+import Scale.Color
 import Shape exposing (defaultPieConfig)
-import TypedSvg exposing (g, svg, text_)
-import TypedSvg.Attributes exposing (dy, fill, stroke, textAnchor, transform, viewBox)
-import TypedSvg.Attributes.InPx exposing (height, width)
+import SubPath exposing (SubPath)
+import TypedSvg exposing (circle, g, line, rect, svg, text_)
+import TypedSvg.Attributes as Explicit exposing (dy, fill, fontFamily, stroke, textAnchor, transform, viewBox)
+import TypedSvg.Attributes.InPx exposing (height, strokeWidth, width, x, x1, x2, y, y1, y2)
 import TypedSvg.Core exposing (Svg, text)
-import TypedSvg.Types exposing (AnchorAlignment(..), Fill(..), Transform(..), em)
+import TypedSvg.Types exposing (AnchorAlignment(..), Fill(..), Transform(..), em, percent)
+
+
+
+-- Curve
+
+
+wc : Float
+wc =
+    990
+
+
+hc : Float
+hc =
+    450
+
+
+padding : Float
+padding =
+    100
+
+
+xScale : Float -> Float -> ContinuousScale Float
+xScale min max =
+    Scale.linear ( padding, wc - padding ) ( min, max )
+
+
+yScale : Float -> Float -> ContinuousScale Float
+yScale min max =
+    Scale.linear ( hc - padding, padding ) ( min, max )
+
+
+type alias Curve =
+    List ( Float, Float ) -> SubPath
+
+
+viewCurve : ( String, Curve, Color ) -> Budget -> Svg msg
+viewCurve ( name, curve, color ) b =
+    let
+        list = getSumLines b
+        minimumY =
+            Maybe.withDefault 0 <| List.minimum <| List.map Tuple.second list
+
+        maximumY =
+            Maybe.withDefault 0 <| List.maximum <| List.map Tuple.second list
+
+        preparedXScale = xScale 0 <| toFloat <| List.length list - 1
+        preparedYScale = yScale minimumY maximumY
+        scaledPoints =
+            preparedPoints list preparedXScale preparedYScale
+        yLabelTicks = if List.length list > 5 then 5 else (List.length list) - 1
+    in
+    div []
+        [ svg [ viewBox 0 0 w h ]
+            [ g [ transform [ Translate 50 0 ] ]
+                [ Axis.left [ Axis.tickSizeInner 12, Axis.tickSizeOuter 15 ] preparedYScale
+                ]
+            , g [ transform [ Translate 0 (h - 100) ] ]
+                [ Axis.bottom [ Axis.tickFormat (\a -> getLabel b a),Axis.tickCount yLabelTicks, Axis.tickSizeInner 12, Axis.tickSizeOuter 15 ] preparedXScale
+                ]
+            , g []
+                [ List.map Just (Debug.log "prepared" scaledPoints)
+                    |> Shape.line curve
+                    |> (\path -> Path.element path [ stroke color, fill FillNone, strokeWidth 2 ])
+                ]
+            ]
+        ]
+
+
+preparedPoints : List ( Float, Float ) -> ContinuousScale Float -> ContinuousScale Float -> List ( Float, Float )
+preparedPoints list xScl yScl =
+    List.map (\( x, y ) -> ( Scale.convert xScl x, Scale.convert yScl y )) <| Debug.log "points" list
+
+
+getSum : Budget -> Int -> Float
+getSum b i =
+    List.sum <| List.map .amount <| List.take (i + 1) b.lines
+
+getSumLines : Budget -> List ( Float, Float )
+getSumLines b =
+    List.indexedMap (\a line -> ( toFloat a, getSum b a )) b.lines
+
+
+getLabel : Budget -> Float -> String
+getLabel b index =
+    let
+        val = List.Extra.getAt (round index) b.lines
+    in
+    case val of
+        Just line ->
+            Formatters.toUtcString line.date_created
+    
+        Nothing ->
+            ""
+
+
+
+-- Pie
 
 
 w : Float
@@ -30,17 +132,21 @@ h =
 
 colors : Int -> Array Color
 colors count =
-    Array.fromList <| List.take count <| List.concat <| List.repeat (count // 10 + 1) [ Color.rgb255 152 171 198
-        , Color.rgb255 138 137 166
-        , Color.rgb255 123 104 136
-        , Color.rgb255 107 72 107
-        , Color.rgb255 159 92 85
-        , Color.rgb255 208 116 60
-        , Color.rgb255 255 96 0
-        , Color.rgb255 255 96 120
-        , Color.rgb255 155 26 13
-        , Color.rgb255 10 208 130
-        ]
+    Array.fromList <|
+        List.take count <|
+            List.concat <|
+                List.repeat (count // 10 + 1)
+                    [ Color.rgb255 152 171 198
+                    , Color.rgb255 138 137 166
+                    , Color.rgb255 123 104 136
+                    , Color.rgb255 107 72 107
+                    , Color.rgb255 159 92 85
+                    , Color.rgb255 208 116 60
+                    , Color.rgb255 255 96 0
+                    , Color.rgb255 255 96 120
+                    , Color.rgb255 155 26 13
+                    , Color.rgb255 10 208 130
+                    ]
 
 
 radius : Float
@@ -88,34 +194,38 @@ data =
     , ( "/", 612463 )
     ]
 
+
 getCategories : Budget -> List String
 getCategories b =
     List.Extra.unique <| List.map (\a -> a.category.code) b.lines
 
+
 countCategoriesItem : String -> Budget -> Float
 countCategoriesItem cat b =
-    List.sum <| List.map .amount <| List.filter (\a -> a.category.code == cat) b.lines 
+    List.sum <| List.map .amount <| List.filter (\a -> a.category.code == cat) b.lines
+
 
 getCategoriesCount : Budget -> List ( String, Float )
-getCategoriesCount b = 
+getCategoriesCount b =
     let
-        categories = getCategories b
+        categories =
+            getCategories b
     in
-        List.map (\a -> (a ++ " " ++ (String.fromFloat <| countCategoriesItem a b), countCategoriesItem a b)) categories
+    List.map (\a -> ( a ++ " " ++ (String.fromFloat <| countCategoriesItem a b), countCategoriesItem a b )) categories
+
 
 view : BudgetWrapper -> Html msg
 view budget =
     case budget of
         Api.Success b ->
-            div [] [
-                h1 [] [text "Statistics"]
-                , a [href <| "/budget/" ++ (String.fromInt b.id)] [text "Detail"]
-                , a [href <| "/budget-settings/" ++ (String.fromInt b.id)] [text "Settings"]
-                , a [href "#" ] [text "Statistic"]
-                , div [class "full-width"] [viewPie <| getCategoriesCount b]
-            ]
-    
+            div [ class "full-width" ]
+                [ h1 [] [ text "Statistics" ]
+                , a [ href <| "/budget/" ++ String.fromInt b.id ] [ text "Detail" ]
+                , a [ href <| "/budget-settings/" ++ String.fromInt b.id ] [ text "Settings" ]
+                , a [ href "#" ] [ text "Statistic" ]
+                , div [ class "full-width" ] [ viewCurve ( "Linear", Shape.linearCurve, Color.black ) b ]
+                , div [ class "full-width" ] [ viewPie <| getCategoriesCount b ]
+                ]
+
         _ ->
             div [] []
-            
-
