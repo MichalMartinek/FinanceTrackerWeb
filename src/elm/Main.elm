@@ -299,11 +299,9 @@ view model =
                         ]
 
                 BudgetDetail id ->
-                    div [ class "main-layout" ]
-                        [ budgetsSidePanel
-                        , Budget.view model.budgetModel (BudgetFormMsg << BudgetForm.InitForm) (BudgetMsg << Budget.DeleteBudget) (BudgetSettingsMsg << BudgetSettings.SetBudget) (\a b -> BudgetLineForm.InitLineForm a b |> BudgetLineFormMsg) (\a b -> BudgetLine.DeleteBudgetLine a b |> BudgetLineMsg)
-                        , BudgetLineForm.viewForm model.budgetLineForm (Categories.getList model.categories) |> Html.map BudgetLineFormMsg
-                        ]
+                    div [ class "main-layout" ] <|
+                        budgetsSidePanel
+                            :: Budget.view model.budgetModel model.profile.data (BudgetFormMsg << BudgetForm.InitForm) (BudgetMsg << Budget.DeleteBudget) (BudgetSettingsMsg << BudgetSettings.SetBudget) (\a b -> BudgetLineForm.InitLineForm a b |> BudgetLineFormMsg) (\a b -> BudgetLine.DeleteBudgetLine a b |> BudgetLineMsg) (BudgetLineForm.viewForm model.budgetLineForm (Categories.getList model.categories) |> Html.map BudgetLineFormMsg)
 
                 BudgetSettings id ->
                     div [ class "main-layout" ]
@@ -312,10 +310,9 @@ view model =
                         ]
 
                 BudgetStatistics id ->
-                    div [ class "main-layout" ]
-                        [ budgetsSidePanel
-                        , BudgetStatistics.view model.budgetModel.data (BudgetSettingsMsg << BudgetSettings.SetBudget)
-                        ]
+                    div [ class "main-layout" ] <|
+                        budgetsSidePanel
+                            :: BudgetStatistics.view model.budgetModel.data model.profile.data (BudgetSettingsMsg << BudgetSettings.SetBudget)
 
                 NewBudget ->
                     div [ class "main-layout" ]

@@ -1,4 +1,4 @@
-module Budgets.JsonTest exposing (testBudgetDecoder)
+module Budgets.JsonTest exposing (testBudgetDecoder, testEncodeForm)
 
 import Budgets.Json exposing (..)
 import Budgets.Types exposing (..)

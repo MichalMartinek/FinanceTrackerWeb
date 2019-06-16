@@ -5,7 +5,7 @@ import BudgetLines.Types exposing (BudgetLine)
 import Categories.Helpers exposing (transformToName)
 import Formatters
 import Html exposing (Html, a, button, div, h1, h2, p, span, text)
-import Html.Attributes exposing (class, href)
+import Html.Attributes exposing (class, href, disabled)
 import Html.Events exposing (onClick)
 import Http
 
@@ -76,13 +76,13 @@ deleteBudgetLine token id msg =
 -- Views
 
 
-viewBudgetsListItem : String ->  BudgetLine -> (BudgetLine -> msg) -> (Int -> msg) -> Html msg
-viewBudgetsListItem currency line onEdit onDelete =
+viewBudgetsListItem : Bool -> String ->  BudgetLine -> (BudgetLine -> msg) -> (Int -> msg) -> Html msg
+viewBudgetsListItem viewOnly currency line onEdit onDelete =
     div [ class "line-detail" ]
         [ span [ class "line-detail__title" ] [ text line.description ]
         , p [] [ text <| transformToName line.category ]
         , p [] [ text <| (String.fromFloat line.amount) ++ " " ++ currency ]
         , p [] [ text <| Formatters.toUtcString line.date_created ]
-        , button [ class "btn", onClick <| onEdit line ] [ text "Edit" ]
-        , button [ class "btn", onClick <| onDelete line.id ] [ text "Delete" ]
+        , button [ class "btn", onClick <| onEdit line, disabled viewOnly ] [ text "Edit" ]
+        , button [ class "btn", onClick <| onDelete line.id, disabled viewOnly ] [ text "Delete" ]
         ]

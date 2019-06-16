@@ -3,25 +3,27 @@ module Budgets.Statistics exposing (view)
 import Api
 import Array exposing (Array)
 import Axis
-import Budgets.Types exposing (Budget, BudgetWrapper)
+import Budgets.Common exposing (..)
 import BudgetLines.Types exposing (BudgetLine)
+import Budgets.Types exposing (Budget, BudgetWrapper)
 import Color exposing (Color)
+import Formatters
 import Html exposing (Html, a, button, div, h1, h2, p, text)
-import Html.Attributes exposing (class, href, disabled)
+import Html.Attributes exposing (class, disabled, href)
 import Html.Events exposing (onClick)
 import List.Extra
-import Formatters
-import Time
 import Path exposing (Path)
 import Scale exposing (ContinuousScale)
 import Scale.Color
 import Shape exposing (defaultPieConfig)
 import SubPath exposing (SubPath)
+import Time
 import TypedSvg exposing (circle, g, line, rect, svg, text_)
 import TypedSvg.Attributes as Explicit exposing (dy, fill, fontFamily, stroke, textAnchor, transform, viewBox)
 import TypedSvg.Attributes.InPx exposing (height, strokeWidth, width, x, x1, x2, y, y1, y2)
 import TypedSvg.Core exposing (Svg, text)
 import TypedSvg.Types exposing (AnchorAlignment(..), Fill(..), Transform(..), em, percent)
+import Users.Types exposing (ProfileDataWrapper)
 
 
 
@@ -60,18 +62,30 @@ type alias Curve =
 viewCurve : ( String, Curve, Color ) -> Budget -> Svg msg
 viewCurve ( name, curve, color ) b =
     let
-        list = getSumLines b
+        list =
+            getSumLines b
+
         minimumY =
             Maybe.withDefault 0 <| List.minimum <| List.map Tuple.second list
 
         maximumY =
             Maybe.withDefault 0 <| List.maximum <| List.map Tuple.second list
 
-        preparedXScale = xScale 0 <| toFloat <| List.length list - 1
-        preparedYScale = yScale minimumY maximumY
+        preparedXScale =
+            xScale 0 <| toFloat <| List.length list - 1
+
+        preparedYScale =
+            yScale minimumY maximumY
+
         scaledPoints =
             preparedPoints list preparedXScale preparedYScale
-        yLabelTicks = if List.length list > 5 then 5 else (List.length list) - 1
+
+        yLabelTicks =
+            if List.length list > 5 then
+                5
+
+            else
+                List.length list - 1
     in
     div []
         [ svg [ viewBox 0 0 w h ]
@@ -79,7 +93,7 @@ viewCurve ( name, curve, color ) b =
                 [ Axis.left [ Axis.tickSizeInner 12, Axis.tickSizeOuter 15 ] preparedYScale
                 ]
             , g [ transform [ Translate 0 (h - 100) ] ]
-                [ Axis.bottom [ Axis.tickFormat (\a -> getLabel b a),Axis.tickCount yLabelTicks, Axis.tickSizeInner 12, Axis.tickSizeOuter 15 ] preparedXScale
+                [ Axis.bottom [ Axis.tickFormat (\a -> getLabel b a), Axis.tickCount yLabelTicks, Axis.tickSizeInner 12, Axis.tickSizeOuter 15 ] preparedXScale
                 ]
             , g []
                 [ List.map Just scaledPoints
@@ -99,6 +113,7 @@ getSum : Budget -> Int -> Float
 getSum b i =
     List.sum <| List.map .amount <| List.take (i + 1) b.lines
 
+
 getSumLines : Budget -> List ( Float, Float )
 getSumLines b =
     List.indexedMap (\a line -> ( toFloat a, getSum b a )) b.lines
@@ -107,12 +122,13 @@ getSumLines b =
 getLabel : Budget -> Float -> String
 getLabel b index =
     let
-        val = List.Extra.getAt (round index) b.lines
+        val =
+            List.Extra.getAt (round index) b.lines
     in
     case val of
         Just line ->
             Formatters.toUtcString line.date_created
-    
+
         Nothing ->
             ""
 
@@ -212,62 +228,74 @@ getCategoriesCount b typeFilter =
         categories =
             getCategories b typeFilter
     in
-    List.map (\a -> ( a ++ " " ++ (String.fromFloat <| countCategoriesItem a b typeFilter), countCategoriesItem a b typeFilter)) categories
+    List.map (\a -> ( a ++ " " ++ (String.fromFloat <| countCategoriesItem a b typeFilter), countCategoriesItem a b typeFilter )) categories
 
 
-
-viewRibbon : Int -> msg -> Html msg
-viewRibbon id settingsMsg =
+viewRibbon : Int -> msg -> Bool -> Html msg
+viewRibbon id settingsMsg disabledSettings =
     div [ class "budget-ribbon" ]
         [ a [ class "btn", href <| "/budget/" ++ String.fromInt id ] [ text "Detail" ]
         , button [ disabled True, class "btn" ] [ text "Statistics" ]
-        , button [ class "btn", onClick settingsMsg ] [ text "Settings" ]
+        , button [ class "btn", onClick settingsMsg, disabled disabledSettings ] [ text "Settings" ]
         ]
+
 
 viewCurveDiagram : Budget -> Html msg
 viewCurveDiagram budget =
     let
-      content = if (List.length budget.lines) > 1 then
-            viewCurve ( "Linear", Shape.linearCurve, Color.black ) budget
-        else
-            div [] [text "Add more budget lines"]
+        content =
+            if List.length budget.lines > 1 then
+                viewCurve ( "Linear", Shape.linearCurve, Color.black ) budget
+
+            else
+                div [] [ text "Add more budget lines" ]
     in
-        div [] [h2 [] [text "Finance movement"], content]
+    div [] [ h2 [] [ text "Finance movement" ], content ]
+
 
 viewIncomeCategories : Budget -> Html msg
 viewIncomeCategories budget =
     let
-      list = getCategoriesCount budget (\b -> b.amount > 0)
-      content = if (List.length list) > 0 then
-            viewPie list
-        else
-            div [] [text "Add more budget lines"]
+        list =
+            getCategoriesCount budget (\b -> b.amount > 0)
+
+        content =
+            if List.length list > 0 then
+                viewPie list
+
+            else
+                div [] [ text "Add more budget lines" ]
     in
-        div [] [h2 [] [text "Income categories"], content]
+    div [] [ h2 [] [ text "Income categories" ], content ]
+
 
 viewExpenseCategories : Budget -> Html msg
 viewExpenseCategories budget =
     let
-      list = List.map (\(a, b) -> (a, b * -1)) <| getCategoriesCount budget (\b -> b.amount < 0)
-      content = if (List.length list) > 0 then
-            viewPie list
-        else
-            div [] [text "Add more budget lines"]
+        list =
+            List.map (\( a, b ) -> ( a, b * -1 )) <| getCategoriesCount budget (\b -> b.amount < 0)
+
+        content =
+            if List.length list > 0 then
+                viewPie list
+
+            else
+                div [] [ text "Add more budget lines" ]
     in
-        div [] [h2 [] [text "Expense categories"], content]
+    div [] [ h2 [] [ text "Expense categories" ], content ]
 
 
-view : BudgetWrapper -> (Int -> msg) -> Html msg
-view budget settingsMsg =
-    case budget of
-        Api.Success b ->
-            div [ class "main-layout__inner" ]
-                [ h2 [] [ text b.name ]
-                , viewRibbon b.id (settingsMsg b.id)
-                , div [ class "full-width" ] [ viewCurveDiagram b ]
-                , div [ class "full-width" ] [ viewIncomeCategories b ]
-                , div [ class "full-width" ] [ viewExpenseCategories b ]
-                ]
-
-        _ ->
-            div [] []
+view : BudgetWrapper -> ProfileDataWrapper -> (Int -> msg) -> List (Html msg)
+view budgetData profileData settingsMsg =
+    Api.defaultDataWrapperView profileData <|
+        \profile ->
+            Api.defaultDataWrapperView budgetData <|
+                \b ->
+                    [ div [ class "main-layout__inner" ]
+                        [ h2 [] [ text b.name ]
+                        , viewRibbon b.id (settingsMsg b.id) (not <| isAdmin b profile.id)
+                        , div [ class "full-width" ] [ viewCurveDiagram b ]
+                        , div [ class "full-width" ] [ viewIncomeCategories b ]
+                        , div [ class "full-width" ] [ viewExpenseCategories b ]
+                        ]
+                    ]
