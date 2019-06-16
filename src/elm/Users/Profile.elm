@@ -23,11 +23,13 @@ type Msg
 
 
 initLoading :
-    String
+    { token : String
+    , tagger : Msg -> msg
+    }
     -> Model
-    -> ( Model, Cmd Msg )
-initLoading token model =
-    ( { model | data = Api.Loading }, fetchProfile token )
+    -> ( Model, Cmd msg )
+initLoading {token, tagger} model =
+    ( { model | data = Api.Loading }, fetchProfile token (tagger << GotProfile) )
 
 
 init : Model
@@ -39,7 +41,7 @@ init =
 update :
     Msg
     -> Model
-    -> ( Model, Cmd Msg )
+    -> ( Model, Cmd msg )
 update msg model =
     case msg of
         GotProfile result ->
@@ -55,8 +57,8 @@ update msg model =
 -- HTTP
 
 
-fetchProfile : String -> Cmd Msg
-fetchProfile token =
+fetchProfile : String -> (Result Http.Error ProfileData -> msg) -> Cmd msg
+fetchProfile token msg =
     let
         headers =
             [ Http.header "Authorization" ("token " ++ token)
@@ -67,7 +69,7 @@ fetchProfile token =
         , headers = headers
         , url = Api.apiUrl ++ "/profile/"
         , body = Http.emptyBody
-        , expect = Http.expectJson GotProfile profileDecoder
+        , expect = Http.expectJson msg profileDecoder
         , timeout = Nothing
         , tracker = Nothing
         }

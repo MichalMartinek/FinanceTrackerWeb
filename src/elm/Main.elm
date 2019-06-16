@@ -41,11 +41,8 @@ init token url key =
         initialRoute =
             toRoute url
 
-        loadCategoriesCmd =
-            Cmd.map CategoriesMsg <| Categories.fetchCategories
-
         loadProfileCmd t =
-            Cmd.map ProfileMsg <| Profile.fetchProfile t
+            Profile.fetchProfile t (ProfileMsg << Profile.GotProfile)
 
         budgetLineFormType =
             case initialRoute of
@@ -115,7 +112,7 @@ init token url key =
       , categories = Categories.init
       , profile = Profile.init
       }
-    , Cmd.batch [ loadCategoriesCmd, redirectCmd ]
+    , Cmd.batch [ Cmd.map CategoriesMsg <| Categories.fetchCategories, redirectCmd ]
     )
 
 
@@ -127,30 +124,20 @@ urlChaned route model =
     in
     case ( route, model.token ) of
         ( Home, Just t ) ->
-            Profile.initLoading t newModel.profile |> updateWithCmd (\subModel lModel -> { lModel | profile = subModel }) ProfileMsg newModel
+            Profile.initLoading { tagger = ProfileMsg, token = t } newModel.profile |> updateWith (\subModel lModel -> { lModel | profile = subModel }) newModel
 
         ( BudgetDetail id, Just t ) ->
             let
                 ( newBudgetModel, nCmd ) =
                     Budget.initLoading t id newModel.budgetModel
-
-                newBudgetLineForm =
-                    BudgetLineForm.init <| BudgetLineForm.NewBudgetLine id
             in
-            ( { newModel | budgetModel = newBudgetModel, budgetLineForm = newBudgetLineForm }, Cmd.map BudgetMsg nCmd )
+            ( { newModel | budgetModel = newBudgetModel, budgetLineForm = BudgetLineForm.init <| BudgetLineForm.NewBudgetLine id }, Cmd.map BudgetMsg nCmd )
 
         ( NewBudget, _ ) ->
             ( { newModel | budgetForm = BudgetForm.init }, Cmd.none )
 
         ( _, _ ) ->
             ( newModel, Cmd.none )
-
-
-updateWithCmd : (subModel -> Model -> Model) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
-updateWithCmd toModel toMsg model ( subModel, subCmd ) =
-    ( toModel subModel model
-    , Cmd.map toMsg subCmd
-    )
 
 
 updateWith : (subModel -> Model -> Model) -> Model -> ( subModel, Cmd Msg ) -> ( Model, Cmd Msg )
@@ -167,7 +154,7 @@ update msg model =
             Maybe.withDefault "" model.token
 
         reloadProfileCmd t =
-            Cmd.map ProfileMsg <| Profile.fetchProfile t
+            Profile.fetchProfile t (ProfileMsg << Profile.GotProfile)
     in
     case msg of
         LinkClicked urlRequest ->
@@ -185,35 +172,22 @@ update msg model =
             ( model, Common.update commonMsg model.key )
 
         LoginMsg loginMsg ->
-            let
-                dispatchToken token =
-                    Task.perform (always <| GotToken token) (Task.succeed ())
-
-                ( newLoginModel, cmd ) =
-                    Login.update
-                        { tagger = LoginMsg
-                        , loginCmd = dispatchToken
-                        }
-                        loginMsg
-                        model.loginModel
-            in
-            ( { model | loginModel = newLoginModel }
-            , cmd
-            )
+            Login.update
+                { tagger = LoginMsg
+                , loginCmd = \token -> Task.perform (always <| GotToken token) (Task.succeed ())
+                }
+                loginMsg
+                model.loginModel
+                |> updateWith (\subModel lModel -> { lModel | loginModel = subModel }) model
 
         RegisterMsg registerMsg ->
-            let
-                ( newLoginModel, cmd ) =
-                    Register.update
-                        { tagger = RegisterMsg
-                        , afterRegisterCmd = Nav.pushUrl model.key "/login"
-                        }
-                        registerMsg
-                        model.registerModel
-            in
-            ( { model | registerModel = newLoginModel }
-            , cmd
-            )
+            Register.update
+                { tagger = RegisterMsg
+                , afterRegisterCmd = Nav.pushUrl model.key "/login"
+                }
+                registerMsg
+                model.registerModel
+                |> updateWith (\subModel lModel -> { lModel | registerModel = subModel }) model
 
         HomeMsg homeMsg ->
             ( { model | homeModel = Home.update homeMsg model.homeModel }
@@ -221,93 +195,63 @@ update msg model =
             )
 
         ProfileMsg profileMsg ->
-            Profile.update profileMsg model.profile |> updateWithCmd (\subModel lModel -> { lModel | profile = subModel }) ProfileMsg model
+            Profile.update profileMsg model.profile |> updateWith (\subModel lModel -> { lModel | profile = subModel }) model
 
         BudgetMsg budgetMsg ->
-            let
-                args =
-                    { token = modelToken
-                    , tagger = BudgetMsg
-                    , navKey = model.key
-                    }
-            in
-            Budget.update args budgetMsg model.budgetModel |> updateWith (\subModel lModel -> { lModel | budgetModel = subModel }) model
+            Budget.update
+                { token = modelToken
+                , tagger = BudgetMsg
+                , navKey = model.key
+                }
+                budgetMsg
+                model.budgetModel
+                |> updateWith (\subModel lModel -> { lModel | budgetModel = subModel }) model
 
         BudgetFormMsg budgetFormMsg ->
-            let
-                args =
-                    { token = modelToken
-                    , tagger = BudgetFormMsg
-                    , reloadProfile = reloadProfileCmd
-                    , navKey = model.key
-                    }
-
-                ( newLoginModel, cmd ) =
-                    BudgetForm.update
-                        args
-                        budgetFormMsg
-                        model.budgetForm
-            in
-            ( { model | budgetForm = newLoginModel }
-            , cmd
-            )
+            BudgetForm.update
+                { token = modelToken
+                , tagger = BudgetFormMsg
+                , reloadProfile = reloadProfileCmd
+                , navKey = model.key
+                }
+                budgetFormMsg
+                model.budgetForm
+                |> updateWith (\subModel lModel -> { lModel | budgetForm = subModel }) model
 
         BudgetSettingsMsg budgetSettingsMsg ->
-            let
-                args =
-                    { token = modelToken
-                    , tagger = BudgetSettingsMsg
-                    , navKey = model.key
-                    , reloadCmd = \id -> Cmd.map BudgetMsg <| Budget.fetchBudget modelToken id Budget.GotBudget
-                    }
-
-                ( newLoginModel, cmd ) =
-                    BudgetSettings.update
-                        args
-                        budgetSettingsMsg
-                        model.budgetSettings
-            in
-            ( { model | budgetSettings = newLoginModel }
-            , cmd
-            )
+            BudgetSettings.update
+                { token = modelToken
+                , tagger = BudgetSettingsMsg
+                , navKey = model.key
+                , reloadCmd = \id -> Cmd.map BudgetMsg <| Budget.fetchBudget modelToken id Budget.GotBudget
+                }
+                budgetSettingsMsg
+                model.budgetSettings
+                |> updateWith (\subModel lModel -> { lModel | budgetSettings = subModel }) model
 
         BudgetLineMsg budgetLineMsg ->
-            let
-                args =
-                    { token = modelToken
-                    , tagger = BudgetLineMsg
-                    , reloadBudget = \t id -> Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget
-                    }
-            in
-            BudgetLine.update args budgetLineMsg model.budgetLineModel |> updateWith (\subModel lModel -> { lModel | budgetLineModel = subModel }) model
+            BudgetLine.update
+                { token = modelToken
+                , tagger = BudgetLineMsg
+                , reloadBudget = \t id -> Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget
+                }
+                budgetLineMsg
+                model.budgetLineModel
+                |> updateWith (\subModel lModel -> { lModel | budgetLineModel = subModel }) model
 
         BudgetLineFormMsg budgetLineFormMsg ->
-            let
-                args =
-                    { token = modelToken
-                    , tagger = BudgetLineFormMsg
-                    , reloadBudget = \t id -> Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget
-                    , navKey = model.key
-                    }
-
-                ( newLoginModel, cmd ) =
-                    BudgetLineForm.update
-                        args
-                        budgetLineFormMsg
-                        model.budgetLineForm
-            in
-            ( { model | budgetLineForm = newLoginModel }
-            , cmd
-            )
+            BudgetLineForm.update
+                { token = modelToken
+                , tagger = BudgetLineFormMsg
+                , reloadBudget = \t id -> Cmd.map BudgetMsg <| Budget.fetchBudget t id Budget.GotBudget
+                , navKey = model.key
+                }
+                budgetLineFormMsg
+                model.budgetLineForm
+                |> updateWith (\subModel lModel -> { lModel | budgetLineForm = subModel }) model
 
         CategoriesMsg catMsg ->
-            let
-                ( newCategoriesModel, cmd ) =
-                    Categories.update catMsg model.categories
-            in
-            ( { model | categories = newCategoriesModel }
-            , cmd
-            )
+            Categories.update catMsg model.categories |> updateWith (\subModel lModel -> { lModel | categories = subModel }) model
 
         GotToken token ->
             ( { model | token = Just token }
@@ -337,14 +281,6 @@ view model =
 
         budgetsSidePanel =
             Common.viewSidePanel model.profile.data |> Html.map CommonMsg
-
-        ( userList, budgetName ) =
-            case model.budgetModel.data of
-                Api.Success d ->
-                    ( d.users, d.name )
-
-                _ ->
-                    ( [], "" )
 
         content =
             case model.route of
